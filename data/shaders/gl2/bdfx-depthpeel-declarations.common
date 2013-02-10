@@ -1,0 +1,13 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/bdfx-depthpeel-declarations.common
+
+
+//
+// Interface between vertex and fragment shaders.
+varying vec4 bdfx_depthTC;
+varying vec2 bdfx_depthTCBias;
+
+
+// END gl2/bdfx-depthpeel-declarations.common
+

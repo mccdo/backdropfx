@@ -1,0 +1,5 @@
+osgEphemerisModel::EphemerisModel {
+    Latitude 38.4765
+    Longitude -122.493
+    SkyDomeRadius 100000
+}

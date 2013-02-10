@@ -1,0 +1,15 @@
+prefix=${fp_file_cwd}/../..
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: backdropFX
+Description: backdropFX release pre-compiled for VES
+Provides: backdropFX bdfx backdropfx
+Requires: openscenegraph openthreads osgWorks boost osgephemeris
+Version: @BACKDROPFX_VERSION@
+Libs: @BACKDROPFX_FPC_LIBRARIES@
+Cflags: @BACKDROPFX_FPC_INCLUDES@
+Arch: noarch
+
+
