@@ -205,7 +205,7 @@ main( int argc, char ** argv )
         smv.setAttachMain( true );
         smv.setAttachTransform( true );
         smv.setSupportSunLighting( false );
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        root->accept( smv );
 
         backdropFX::RebuildShaderModules rsm;
         root->accept( rsm );

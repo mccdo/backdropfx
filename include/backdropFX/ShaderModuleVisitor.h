@@ -4,31 +4,13 @@
 #define __BACKDROPFX_SHADER_MODULE_VISITOR_H__ 1
 
 #include <backdropFX/Export.h>
-#include <backdropFX/ShaderModule.h>
 #include <backdropFX/ShaderLibraryConstants.h>
 #include <osg/NodeVisitor>
 
 #include <deque>
-#include <vector>
-#include <map>
-
-
-// forward
-namespace osg {
-    class Material;
-    class Texture2D;
-    class TexEnv;
-    class TexGen;
-    class Fog;
-    class BlendFunc;
-}
 
 
 namespace backdropFX {
-
-
-// forward
-class ShaderModuleCullCallback;
 
 
 /** \class backdropFX::ShaderModuleVisitor ShaderModuleVisitor.h backdropFX/ShaderModuleVisitor.h
@@ -51,44 +33,31 @@ public:
     ShaderModuleVisitor( osg::NodeVisitor::TraversalMode tm=TRAVERSE_ALL_CHILDREN );
     ~ShaderModuleVisitor();
 
-    /** Control whether mergeDefaults() attaches main() vertex and
+    /** Control adding default uniforms and shader modules to the root of the visited scene graph.
+    Default is true. The default shader modules to add can be further refined with the
+    setAdttachMain(), setAttachTransform(), and setSupportSunLighting() calls. When set to
+    false, it ignores setAdttachMain(), setAttachTransform(), and setSupportSunLighting(), as
+    it adds no default shader modules to the root of the visited scene graph.
+
+    An application typically setAddDefaults to true when running the visitor on its main
+    scene graph, but set it to false when visiting a subgraph loaded at runtime
+    and added as a child to the main scene graph.
+    */
+    void setAddDefaults( bool addDefaults );
+    /** Control whether this visitor attaches main() vertex and
     fragment shader modules to the top level node.
     Default: Don't attach main (DepthPeel specifies main modules).
-    */
+    Note: The visitor ignores this call if setAddDefaults is false. */
     void setAttachMain( bool attachMain );
     /** Likewise for attaching a computeTransform function.
     Default: Don't attach transform (DepthPartition specifies a transform module).
-    */
+    Note: The visitor ignores this call if setAddDefaults is false. */
     void setAttachTransform( bool attachTransform );
-
-    /** Control whether mergeDefaults inserts lighting shader modules 
+    /** Control whether this visitor inserts lighting shader modules 
     the support using the Sun as a light source. Default
     is false, but apps should set to true for use with backdropFX.
-
-    NOTE: This function is only valid if setConvertSceneState is true.
-    When false, this visitor doesn't add any lighting shaders to the
-    scene graph.
-    */
+    Note: The visitor ignores this call if setAddDefaults is false. */
     void setSupportSunLighting( bool supportSunLighting );
-
-    /** Control whether this visitor removes OSG StateAttributes and modes
-    after it adds equivalent uniforms to support shader-based rendering.
-    Default is true, because the OSG StateAttributes and modes are no
-    longer necessary for correct rendering, and their presence will increase
-    OSG draw time. Applications that require the original state information
-    should set this to true. */
-    void setRemoveFFPState( bool removeFFPState );
-
-    /** If true, fog and light state are also converted to shader-based, though
-    this is known to be a complex problem and there are limitations on SMV's
-    ability to handle this correctly. This feature is disabled by default, and
-    when used in the context of backdropFX, the Manager provides a top-level
-    interface for controling fog and light state (as well as linking shadows to
-    lights).
-
-    Regardless of how setConvertSceneState is set, SMV still removes fog and
-    light state if setRemoveFFPState is true. */
-    void setConvertSceneState( bool convertSceneState );
 
     virtual void apply( osg::Node& node );
     virtual void apply( osg::Group& node );
@@ -101,37 +70,21 @@ public:
     Because this is a Group, we can attach a ShaderModuleCullCallback
     and add shader modules. */
     void convertStateSet( osg::Group& node );
+    void convertStateSet( osg::Node& node );
     /** Convert a StateSet from FFP to shader-based. Because we
     don't have the owning Group (StateSet belongs to a Drawable),
     it limits us to adding uniforms. */
     void convertStateSet( osg::StateSet* ss );
 
-    /** Allows applications to set their own initial state. For example,
-    if running SMV on a loaded model to be attached into a parent scene graph,
-    use osgwTools::accumulateStateSets() to get the StateSet at the attachment
-    point, then pass that to setInitialStateSet(). The visitor uses the iniotial
-    state as the basis for default uniform values. */
-    void setInitialStateSet( osg::StateSet* stateSet, const ShaderModuleCullCallback::ShaderMap& shaders );
+    void setDefaults( osg::Node& node );
 
-    /** After this visitor completes traversal, the calling code should call this
-    function to merge default uniforms and shader modules to the root node
-    of the traversed scene graph. Thus function merges default state with existing
-    state, and therefore doesn't overwrite existing uniforms with the same name or
-    shader modules with the same semantic and type. */
-    void mergeDefaults( osg::Node& node );
+    /** Used internally to track state during traversal. This is a
+    public method so that apps can specify their own default state. */
+    void pushStateSet( osg::StateSet* ss );
+    void popStateSet();
 
 protected:
-    bool _attachMain;
-    bool _attachTransform;
-    bool _supportSunLighting;
-    bool _removeFFPState;
-    bool _convertSceneState;
-
-    osg::StateSet* _initialState;
-    ShaderModuleCullCallback::ShaderMap* _initialShaders;
-    osg::ref_ptr< ShaderModuleCullCallback > _initialSmccb;
-
-    unsigned int _depth;
+    std::string elementName( const std::string& prefix, int element, const std::string& suffix );
 
     osg::ref_ptr< osg::Shader > _vMain;
     osg::ref_ptr< osg::Shader > _vInit;
@@ -153,9 +106,14 @@ protected:
     osg::ref_ptr< osg::Shader > _fFogOn;
     osg::ref_ptr< osg::Shader > _fFogOff;
 
+    bool _addDefaults;
+    bool _attachMain;
+    bool _attachTransform;
+    bool _supportSunLighting;
+
+    unsigned int _depth;
 
 
-    // TBD psh
     struct LightSourceParameters
     {
         LightSourceParameters();
@@ -170,11 +128,10 @@ protected:
         float _constantAtt;
         float _linearAtt;
         float _quadAtt;
-        float _absolute;
+        int _absolute;
     };
     LightSourceParameters _lights[ BDFX_MAX_LIGHTS ];
 
-    // TBD psh
     struct TexGenEyePlanes
     {
         TexGenEyePlanes();
@@ -188,46 +145,6 @@ protected:
 
     bool isSet( GLenum stateItem, osg::StateSet* ss );
     bool isEnabled( GLenum stateItem, osg::StateSet* ss );
-    bool isTextureSet( unsigned int unit, GLenum stateItem, osg::StateSet* ss );
-    bool isTextureEnabled( unsigned int unit, GLenum stateItem, osg::StateSet* ss );
-
-
-    static unsigned int LightOff;
-    static unsigned int LightOn;
-    static unsigned int LightSun;
-    static unsigned int LightSunOnly;
-    static unsigned int LightLight0;
-    unsigned int _lightShaders;
-
-
-    typedef std::vector< osg::ref_ptr< osg::Uniform > > UniformList;
-    typedef std::map< GLenum, UniformList > ModeUniformMap;
-    typedef std::map< osg::StateAttribute*, UniformList > AttributeUniformMap;
-
-    ModeUniformMap _modeOnMap, _modeOffMap;
-    AttributeUniformMap _attrMap;
-    ModeUniformMap _texModeOnMap[ BDFX_MAX_TEXTURE_UNITS ], _texModeOffMap[ BDFX_MAX_TEXTURE_UNITS ];
-    AttributeUniformMap _texAttrMap[ BDFX_MAX_TEXTURE_UNITS ];
-
-    bool _usesLightSource[ BDFX_MAX_LIGHTS ];
-
-
-    void convertMaterial( osg::Material* mat );
-    void convertTexture( osg::Texture2D* tex, AttributeUniformMap& am );
-    void convertTexEnv( osg::TexEnv* texEnv, unsigned int unit, AttributeUniformMap& am );
-    void convertTexGen( osg::TexGen* texGen, unsigned int unit, AttributeUniformMap& am );
-    void convertFog( osg::Fog* fog );
-    void convertBlendFunc( osg::BlendFunc* bf, osg::StateSet* ss );
-
-    void mergeDefaultsLighting( ShaderModuleCullCallback* smccb, osg::StateSet* stateSet );
-    void mergeDefaultsTexture( ShaderModuleCullCallback* smccb, osg::StateSet* stateSet );
-    void mergeDefaultsPointSprite( ShaderModuleCullCallback* smccb, osg::StateSet* stateSet );
-
-    osg::Uniform* findUniform( const std::string& name, const osg::StateSet* stateSet );
-
-    /** Used internally to track state during traversal. */
-    void pushStateSet( osg::StateSet* ss );
-    void popStateSet();
 };
 
 

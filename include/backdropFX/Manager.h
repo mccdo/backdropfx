@@ -6,18 +6,14 @@
 #include <backdropFX/Export.h>
 #include <backdropFX/BackdropCommon.h>
 #include <backdropFX/SkyDome.h>
-#include <backdropFX/ShadowMap.h>
 #include <backdropFX/DepthPartition.h>
 #include <backdropFX/DepthPeelBin.h>
 #include <backdropFX/RenderingEffects.h>
-#include <backdropFX/LightInfo.h>
 #include <osg/Referenced>
 #include <osg/ref_ptr>
 #include <osg/Group>
-#include <osg/Fog>
 #include <osg/FrameBufferObject>
 #include <osg/Texture2D>
-
 
 
 namespace backdropFX
@@ -86,86 +82,32 @@ public:
     void rebuild( unsigned int featureFlags=defaultFeatures );
     static unsigned int defaultFeatures;
     static unsigned int skyDome;
-    static unsigned int shadowMap;
     static unsigned int depthPeel;
 
+    // Lighting and shadow controls
+    // TBD
 
     /** Directly access the SkyDome class. */
     SkyDome& getSkyDome();
-    /** Directly access the ShadowMap class. */
-    ShadowMap& getShadowMap();
     /** Directly access the DepthPartition class. */
     DepthPartition& getDepthPartition();
     /** Directly access the DepthPeel class. */
     osg::Group& getDepthPeel();
-    /** Directly access the effects Camera object. */
-    osg::Camera& getEffectsCamera();
+    /** Directly access the glow Camera class. */
+    osg::Camera& getGlowCamera();
     /** Directly access the RenderingEffects class. */
     RenderingEffects& getRenderingEffects();
 
     /** Access to rendered output. Color buffer A is the combined output
     of the SkyDome, DepthPartition, and DepthPeel classes. */
     osg::Texture2D* getColorBufferA();
-    /** Get a depth map produced by ShadowMap. */
-    osg::Texture2D* getShadowDepthMap( unsigned int index );
     /** Access to rendered output. Color buffer Glow is the first output
-    of the effects Camera, a non-blurred glow map. */
+    of the glow Camera, a non-blurred glow map. */
     osg::Texture2D* getColorBufferGlow();
     /** Access to rendered output. Depth buffer is the second output
-    of the effects Camera and contains:
-      \li red channel: focal-distance processed depth values in the range 0.0 (in sharp focus) to 1.0 (fully blurred).
-      \li green channel: heat distortion normalized distance, 0.0 for no distortion and 1.0 for full distortion.
-    */
+    of the glow Camera and contains focal-distance processed depth values
+    in the range 0.0 (in sharp focus) to 1.0 (fully blurred). */
     osg::Texture2D* getDepthBuffer();
-
-
-    /** Full scene fog state. */
-    void setFogState( osg::Fog* fog, bool enable=true );
-    osg::Fog* getFog();
-    bool getFogEnable() const;
-
-    /** Sets light position uniform and, if shadows are enabled, updates
-    the ShadowMap's ShadowInfo position field. There are 9 supported lights,
-    numbered 0-8. 0-7 are the FFP lights corresponding to GL_LIGHT0 through
-    GL_LIGHT7. Light 8 is the Sun. (TBD these light values should not be
-    literals, need to define some constants for them.
-    
-    Note that these methods are wrappers around the identical methods in ShadowMap.
-    Using these entry points additionally sets top-level uniforms to controls the
-    lights for shading and enable/disable. */
-    void setLightingEnable( bool enable=true );
-    bool getLightingEnable() const;
-    void setLight( osg::Light* light, bool enable=true );
-    void setLightEnable( unsigned int lightNum, bool enable );
-    bool getLightEnable( unsigned int lightNum ) const;
-    unsigned int getNumLights() const { return( _lightInfoVec.size() ); }
-    /** Optimized function for updating the position. Sets the position
-    uniform, but does not re-evaluate the set of shader modules to support
-    lighting. 'enable' is ignored, except as pass-through to shadows.
-    TBD: the enable parameter is really ugly and should be removed. */
-    void setLightPosition( unsigned int lightNum, const osg::Vec4& pos, bool enable=true );
-    osg::Vec4 getLightPosition( unsigned int lightNum ) const;
-
-    /** Enables a simplified light model designed to reduce the number of
-    uniforms that would be required to support full FFP lighting. The
-    simplified model is enabled by default.
-    
-    In the simplified model:
-    \li No support for emissive material.
-    \li Ambient material is taken from diffuse material.
-    \li Light sources don't emit ambient light. Use \c setLightModelAmbient to specify global ambient light.
-    \li spot lights and light attenuation are not supported.
-    Note that ShaderModuleVisitor calls \c getLightModelSimplified when
-    converting FFP Material attributes to uniforms.
-    */
-    void setLightModelSimplified( bool enable=true );
-    bool getLightModelSimplified() const;
-    /** Sets the global ambient light in the entire scene.
-    Default is osg::Vec4( 0.2, 0.2, 0.2, 1.0 ).
-    */
-    void setLightModelAmbient( const osg::Vec4& ambient );
-    osg::Vec4 getLightModelAmbient() const;
-
 
     /** Specify texture dimensions. In typical usage, pass the window width and height.
     For SceneView multi-view rendering, pass the largest viewport width and height, ignoring x and y.
@@ -173,16 +115,6 @@ public:
     */
     void setTextureWidthHeight( unsigned int texW, unsigned int texH );
     void getTextureWidthHeight( unsigned int& texW, unsigned int& texH ) const;
-
-    /** Add a vector of uniforms to the effects camera StateSet. This is called
-    by RenderingEffects::setEffectsSet() when an Effect is added to the EffectVector.
-    This allows each Effect to contain its own control parameters (such as DOF
-    focal distance), which is used in the effects pass to create the depth map input
-    to the Effect, but not the parameter value isn't actually used by the Effect itself.
-    */
-    void addEffectsPassUniforms( Effect::UniformVector& uniforms );
-    /** Remove a vector of uniforms from the effects camera StateSet. */
-    void removeEffectsPassUniforms( Effect::UniformVector& uniforms );
 
     /** Debug mode control. Pass zero to disable debugging (the default),
     or pass a bitwise OR'd set of debug flags to enable specific debugging features.
@@ -199,59 +131,35 @@ protected:
 
     void internalInit();
 
-    void setSceneFogState( osg::Node* node );
-    void setSceneShadowState( bool shadowsEnabled );
-    void setSceneLightState();
-
     void resize();
 
     osg::ref_ptr< osg::Node > _sceneData;
-
-    // Fog state
-    bool _fogEnable;
-    osg::ref_ptr< osg::Fog > _fog;
-    osg::ref_ptr< osg::Shader > _fogOnVertex, _fogOffVertex;
-    osg::ref_ptr< osg::Shader > _fogOnFragment, _fogOffFragment;
-
-    // Shadow shaders (avoids reloads when toggles on/off).
-    osg::ref_ptr< osg::Shader > _shadowsOnVertex, _shadowsOffVertex;
-    osg::ref_ptr< osg::Shader > _shadowsOnFragment, _shadowsOffFragment;
-    bool _lightModelSimplified;
-    osg::Vec4 _lightModelAmbient;
-
-    // Light state
-    bool _lightingEnable;
-    LightInfoVec _lightInfoVec;
-    osg::ref_ptr< osg::Shader > _lightSunVertex, _lightOnVertex, _lightSunOnlyVertex, _light0Vertex, _lightOffVertex;
 
     //
     // Stucture:
     //
     // _rootNode
     //     _skyDome
-    //     _shadowMap
     //     _depthPart
     //         _depthPeel
     //             _sceneData
-    //     _effectsCamera
+    //     _glowCamera
     //     _renderFX
     //
     osg::ref_ptr< osg::Group > _rootNode;
+    // shadow maps
     osg::ref_ptr< SkyDome > _skyDome;
-    osg::ref_ptr< ShadowMap > _shadowMap;
     osg::ref_ptr< DepthPartition > _depthPart;
     osg::ref_ptr< osg::Group > _depthPeel;
     osg::ref_ptr< RenderingEffects > _renderFX;
 
-    osg::ref_ptr< osg::Camera > _effectsCamera;
+    // TBD temp, prototype code
+    osg::ref_ptr< osg::Camera > _glowCamera;
 
     osg::ref_ptr< osg::FrameBufferObject > _colorBufferAFBO;
     osg::ref_ptr< osg::Texture2D > _colorBufferA;
     osg::ref_ptr< osg::Texture2D > _colorBufferGlow;
     osg::ref_ptr< osg::Texture2D > _depthBuffer;
-
-    osg::ref_ptr< osg::Texture2D > _shadowDepthMap;
-    osg::ref_ptr< osg::FrameBufferObject > _shadowDepthMapFBO;
 
     osg::ref_ptr< osg::FrameBufferObject > _fbo;
 
@@ -303,7 +211,8 @@ backdropFX::RenderingEffects use custom osgUtil::RenderStage classes to implemen
 algorithms and support rendering to texture.
 Depth peeling is a standard osg::Group node that uses a custom RenderBin called
 DepthPeelBin.
-The effects Camera creates a glow map used by the glow effect, and a depth map used by the DOF and heat distortion effects.
+The Glow Camera currently creates a glow map, but in the future it will also provide
+support for other rendering effects.
 
 During the draw traversal of each form, the following operations occur:
 /li If sky dome rendering is enabled, the SkyDome class renders the sky background, Sun, and Moon.
@@ -319,10 +228,8 @@ Note the DepthPartition node is always present. When disabled, it computes one p
   
 /li The DepthPartition stores its color output in a texture map and is made available to downstream
 rendering stages with a call to backdropFX::Manager::getColorBufferA().
-/li For RenderingEffects that require it, the effects Camera performs its own rendering pass to
-create input data, such as glow and depth maps. The output is available to
-downstream rendering stages with a call to backdropFX::Manager::getColorBufferGlow() and
-backdropFX::Manager::getDepthBuffer().
+/li If glow is enabled, the Glow Camera creates a glow map. The output is available to
+downstream rendering stages with a call to backdropFX::Manager::getColorBufferGlow().
 /li The RenderingEffects node processes its list of effects. The RenderingEffects node
 is always present. When there are no application-specified effects, a no-op effect
 displays color buffer A as a texture-mapped triangle pair.

@@ -19,21 +19,21 @@ void computeFogFragment()
 
 	if(bdfx_fog.mode == FOG_LINEAR)
 	{
-		fog = (bdfx_fog.end - bdfx_outFogFragCoord) * bdfx_fog.scale;
+		fog = (gl_Fog.end - bdfx_outFogFragCoord) * gl_Fog.scale;
 	} // if FOG_LINEAR
 	else if(bdfx_fog.mode == FOG_EXP)
 	{
-		fog = exp(-bdfx_fog.density * bdfx_outFogFragCoord);
+		fog = exp(-gl_Fog.density * bdfx_outFogFragCoord);
 	} // if FOG_EXP
 	else if(bdfx_fog.mode == FOG_EXP2)
 	{
-		fog = exp(-bdfx_fog.density * bdfx_fog.density * bdfx_outFogFragCoord * bdfx_outFogFragCoord);
+		fog = exp(-gl_Fog.density * gl_Fog.density * bdfx_outFogFragCoord * bdfx_outFogFragCoord);
 	} // if FOG_EXP2
 
 	fog = clamp(fog, 0.0, 1.0);
 
 	// mix in fog
-	bdfx_processedColor = mix( bdfx_fog.color, bdfx_processedColor, fog );
+	bdfx_processedColor = mix(bdfx_fog.color, bdfx_processedColor, fog);
 
 } // computeFogFragment
 

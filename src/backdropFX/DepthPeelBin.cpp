@@ -20,6 +20,7 @@
 #include <iomanip>
 
 
+
 #define TRACEDUMP(__t)  // osg::notify( osg::NOTICE ) << __t << std::endl;
 
 
@@ -132,11 +133,10 @@ unsigned int DepthPeelBin::drawInit( osg::State& state, osgUtil::RenderLeaf*& pr
 
     return( insertStateSetPosition );
 }
-int DepthPeelBin::drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous, bool& remaining )
+void DepthPeelBin::drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous )
 {
     TRACEDUMP("DepthPeelBin::drawOpaque");
 
-    int drawCount( 0 );
     osg::State& state = *renderInfo.getState();
 
     unsigned int rbc( 0 ), rla( 0 ), rlb( 0 );
@@ -149,7 +149,6 @@ int DepthPeelBin::drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*&
     {
         rbitr->second->draw(renderInfo,previous);
         rbc++;
-        drawCount++;
     }
 
     // draw fine grained ordering.
@@ -161,7 +160,6 @@ int DepthPeelBin::drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*&
         rl->render(renderInfo,previous);
         previous = rl;
         rla++;
-        drawCount++;
     }
 
 
@@ -179,15 +177,10 @@ int DepthPeelBin::drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*&
             rl->render(renderInfo,previous);
             previous = rl;
             rlb++;
-            drawCount++;
         }
     }
-
-    remaining = ( rbitr != _bins.end() );
-
     osg::notify( osg::DEBUG_FP ) << "rbc " << rbc <<
         "  rla " << rla << "  rlb " << rlb << std::endl;
-    return( drawCount );
 }
 
 void DepthPeelBin::drawTransparent( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous )
@@ -222,18 +215,10 @@ void DepthPeelBin::drawFSTP( osg::RenderInfo& renderInfo, osg::State& state, osg
     // Set up the program and uniforms.
     state.applyAttribute( _fstpProgram.get() );
     if( fstpLoc < 0 )
-#if OSG_SUPPORTS_UNIFORM_ID
-        fstpLoc = state.getUniformLocation( _fstpUniform->getNameID() );
-#else
-        fstpLoc = state.getUniformLocation( _fstpUniform->getName() );
-#endif
+        fstpLoc = state.getUniformLocation( _fstpUniform->getName().c_str() );
     _fstpUniform->apply( ext, fstpLoc );
     if( texturePercentLoc < 0 )
-#if OSG_SUPPORTS_UNIFORM_ID
-        texturePercentLoc = state.getUniformLocation( _texturePercentUniform->getNameID() );
-#else
-        texturePercentLoc = state.getUniformLocation( _texturePercentUniform->getName() );
-#endif
+        texturePercentLoc = state.getUniformLocation( _texturePercentUniform->getName().c_str() );
     _texturePercentUniform->apply( ext, texturePercentLoc );
 
     state.setActiveTextureUnit( s_textureUnit+1 );
@@ -350,8 +335,6 @@ void DepthPeelBin::drawImplementation( osg::RenderInfo& renderInfo, osgUtil::Ren
 
 
         // Opaque pass.
-        bool transparentRemaining( false ); // After opaque pass, are there transparent bins?
-        int drawCount( 0 );
         {
             osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, pci._fbo );
 
@@ -375,7 +358,7 @@ void DepthPeelBin::drawImplementation( osg::RenderInfo& renderInfo, osgUtil::Ren
 
             glClearColor( 0., 0., 0., 0. );
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-            drawCount = drawOpaque( renderInfo, previous, transparentRemaining );
+            drawOpaque( renderInfo, previous );
 
             // Blend the opaque pass into the output buffer.
             // We could probably do this a different way, by attaching
@@ -404,89 +387,76 @@ void DepthPeelBin::drawImplementation( osg::RenderInfo& renderInfo, osgUtil::Ren
         }
 
 
-        // drawOpaque() sets this to true if there are transparent bins to render.
-        if( transparentRemaining )
+        // Transparent passes
+        state.setActiveTextureUnit( s_textureUnit );
+        glBindTexture( GL_TEXTURE_2D, pci._depthTex[ 2 ] );
+
+        // Create depth peel layers until we hit _maxPasses, or until
+        // occlusion query indicates we didn't render anything.
+        unsigned int passCount;
+        for( passCount = 0; passCount < _maxPasses; passCount++ )
         {
-            // Transparent passes
-            state.setActiveTextureUnit( s_textureUnit );
-            glBindTexture( GL_TEXTURE_2D, pci._depthTex[ 2 ] );
+            // Specify the depth buffer to render to.
+            osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, pci._fbo );
+            osgwTools::glFramebufferTexture2D( fboExt, GL_DRAW_FRAMEBUFFER_EXT,
+                GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, pci._depthTex[ passCount & 0x1 ], 0 );
+            osg::notify( osg::DEBUG_FP ) << "  Attaching depth buffer " << pci._depthTex[ passCount & 0x1 ] << std::endl;
 
-            // If we already drew something in the opaque pass, then GL_LESS has already been
-            // set. But if we didn't draw anything in the opaque pass (drawCount==0) then the
-            // scene graph will almost certainly set depth function to GL_LESS using lazy state
-            // setting. In that case, we must apply state _now_ so that the transparent pass can
-            // correctly set the depth function to GL_GREATER.
-            if( drawCount == 0 )
-                state.apply();
+            // Use the other depth buffer as an input texture.
+            state.setActiveTextureUnit( s_textureUnit+1 );
+            glBindTexture( GL_TEXTURE_2D, pci._depthTex[ (passCount+1) & 0x1 ] );
+            osg::notify( osg::DEBUG_FP ) << "  Binding depth map " << pci._depthTex[ (passCount+1) & 0x1 ] << std::endl;
 
-            // Create depth peel layers until we hit _maxPasses, or until
-            // occlusion query indicates we didn't render anything.
-            unsigned int passCount;
-            for( passCount = 0; passCount < _maxPasses; passCount++ )
+            _transparentDepth->apply( state );
+            glEnable( GL_DEPTH_TEST );
+            glClearDepth( 0.0 );
+            glClearColor( 0., 0., 0., 0. );
+            glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
+
+            pci._glBeginQuery( GL_SAMPLES_PASSED_ARB, pci._queryID );
+            drawTransparent( renderInfo, previous );
+            pci._glEndQuery( GL_SAMPLES_PASSED_ARB );
+
+            if( dumpImages )
             {
-                // Specify the depth buffer to render to.
-                osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, pci._fbo );
-                osgwTools::glFramebufferTexture2D( fboExt, GL_DRAW_FRAMEBUFFER_EXT,
-                    GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, pci._depthTex[ passCount & 0x1 ], 0 );
-                osg::notify( osg::DEBUG_FP ) << "  Attaching depth buffer " << pci._depthTex[ passCount & 0x1 ] << std::endl;
+                FBOSaveRestoreHelper fboSRHRead( fboExt, pci, GL_READ_FRAMEBUFFER_EXT );
+                osgwTools::glBindFramebuffer( fboExt, GL_READ_FRAMEBUFFER_EXT, pci._fbo );
 
-                // Use the other depth buffer as an input texture.
-                state.setActiveTextureUnit( s_textureUnit+1 );
-                glBindTexture( GL_TEXTURE_2D, pci._depthTex[ (passCount+1) & 0x1 ] );
-                osg::notify( osg::DEBUG_FP ) << "  Binding depth map " << pci._depthTex[ (passCount+1) & 0x1 ] << std::endl;
+                std::string fileName = createFileName( state, passCount );
+                glReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
+                glReadPixels( (GLint)( 0 ), (GLint)( 0 ), width, height, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)pixels );
+                backdropFX::debugDumpImage( fileName, pixels, width, height );
+                osg::notify( osg::NOTICE ) << " - " << fileName << std::endl;
 
-                _transparentDepth->apply( state );
-                glEnable( GL_DEPTH_TEST );
-                glClearDepth( 0.0 );
-                glClearColor( 0., 0., 0., 0. );
-                glClear( GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT );
-
-                pci._glBeginQuery( GL_SAMPLES_PASSED_ARB, pci._queryID );
-                drawTransparent( renderInfo, previous );
-                pci._glEndQuery( GL_SAMPLES_PASSED_ARB );
-
-                if( dumpImages )
-                {
-                    FBOSaveRestoreHelper fboSRHRead( fboExt, pci, GL_READ_FRAMEBUFFER_EXT );
-                    osgwTools::glBindFramebuffer( fboExt, GL_READ_FRAMEBUFFER_EXT, pci._fbo );
-
-                    std::string fileName = createFileName( state, passCount );
-                    glReadBuffer( GL_COLOR_ATTACHMENT0_EXT );
-                    glReadPixels( (GLint)( 0 ), (GLint)( 0 ), width, height, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid*)pixels );
-                    backdropFX::debugDumpImage( fileName, pixels, width, height );
-                    osg::notify( osg::NOTICE ) << " - " << fileName << std::endl;
-
-                    fileName = createFileName( state, passCount, true );
-                    glReadPixels( (GLint)( 0 ), (GLint)( 0 ), width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, (GLvoid*)pixels );
-                    backdropFX::debugDumpDepthImage( fileName, (const short*)pixels, width, height );
-                    osg::notify( osg::NOTICE ) << " - " << fileName << std::endl;
-                }
-
-                // Query the number of pixels rendered to see if it's time to stop.
-                GLint numPixels( 0 );
-                pci._glGetQueryObjectiv( pci._queryID, GL_QUERY_RESULT, &numPixels );
-                osg::notify( osg::DEBUG_FP ) << "  BDFX: DP pass " << passCount << ",  numPixels " << numPixels << std::endl;
-                if( numPixels < _minPixels )
-                {
-                    passCount++;
-                    break;
-                }
-
-                // We rendered something, so now we render the FSTP to combine the layer we just
-                // created with the original FBO.
-                fboSRH.restore();
-
-                drawFSTP( renderInfo, state, ext, pci, fstpLoc, texturePercentLoc );
+                fileName = createFileName( state, passCount, true );
+                glReadPixels( (GLint)( 0 ), (GLint)( 0 ), width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, (GLvoid*)pixels );
+                backdropFX::debugDumpDepthImage( fileName, (const short*)pixels, width, height );
+                osg::notify( osg::NOTICE ) << " - " << fileName << std::endl;
             }
 
-            if( debugMode & BackdropCommon::debugConsole )
-                osg::notify( osg::DEBUG_FP ) << "BDFX: DepthPeelBin: " << passCount << " pass" <<
-                ((passCount==1)?".":"es.") << std::endl;
+            // Query the number of pixels rendered to see if it's time to stop.
+            GLint numPixels( 0 );
+            pci._glGetQueryObjectiv( pci._queryID, GL_QUERY_RESULT, &numPixels );
+            osg::notify( osg::DEBUG_FP ) << "  BDFX: DP pass " << passCount << ",  numPixels " << numPixels << std::endl;
+            if( numPixels < _minPixels )
+            {
+                passCount++;
+                break;
+            }
 
-            // Restore to default.
-            glClearDepth( 1.0 );
+            // We rendered something, so now we render the FSTP to combine the layer we just
+            // created with the original FBO.
+            fboSRH.restore();
 
-        } // if transparentRemaining
+            drawFSTP( renderInfo, state, ext, pci, fstpLoc, texturePercentLoc );
+        }
+
+        if( debugMode & BackdropCommon::debugConsole )
+            osg::notify( osg::DEBUG_FP ) << "BDFX: DepthPeelBin: " << passCount << " pass" <<
+            ((passCount==1)?".":"es.") << std::endl;
+
+        // Restore to default.
+        glClearDepth( 1.0 );
     }
 
 

@@ -63,14 +63,6 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
     osg::notify( osg::DEBUG_INFO ) << "backdropFX: SkyDomeStage::draw" << std::endl;
 
 
-    // Fix for redmine 434. Camera must be set in renderInfo.
-    // Required for any draw-time code that queries the camera
-    // from renderInfo, such as OcclusionQueryNode.
-    // The parent camera/RenderStage doesn't do this because we
-    // are pre-render stages; it hasn't had a chance yet.
-    if( _camera )
-        renderInfo.pushCamera( _camera );
-
     osg::State& state( *renderInfo.getState() );
     const unsigned int contextID( state.getContextID() );
     osg::FBOExtensions* fboExt( osg::FBOExtensions::instance( contextID, true ) );
@@ -144,10 +136,6 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
         UTIL_GL_ERROR_CHECK( msg );
         UTIL_GL_FBO_ERROR_CHECK( msg, fboExt );
     }
-
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.popCamera();
 }
 
 void

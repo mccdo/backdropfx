@@ -20,15 +20,11 @@ ENDMACRO( ADD_SHARED_LIBRARY_INTERNAL TRGTNAME )
 
 MACRO( ADD_OSGPLUGIN TRGTNAME )
     ADD_LIBRARY( ${TRGTNAME} MODULE ${ARGN} )
-    if( WIN32 )
+    IF( WIN32 )
         SET_TARGET_PROPERTIES( ${TRGTNAME} PROPERTIES DEBUG_POSTFIX d )
-    endif()
-
-    link_internal( ${TRGTNAME}
-        backdropFX
-    )
-
+    ENDIF( WIN32 )
     TARGET_LINK_LIBRARIES( ${TRGTNAME}
+        backdropFX
         ${OSGEPHEMERIS_LIBRARIES}
         ${OSGWORKS_LIBRARIES}
         ${OSG_LIBRARIES}
@@ -45,12 +41,8 @@ MACRO( MAKE_EXECUTABLE EXENAME )
     ADD_EXECUTABLE_INTERNAL( ${EXENAME}
         ${ARGN}
     )
-
-    link_internal( ${EXENAME}
-        backdropFX
-    )
-
     TARGET_LINK_LIBRARIES( ${EXENAME}
+        backdropFX
         ${OSGEPHEMERIS_LIBRARIES}
 #        ${OSGBULLETPLUS_LIBRARIES}
 #        ${OSGBULLET_LIBRARIES}
@@ -61,17 +53,12 @@ MACRO( MAKE_EXECUTABLE EXENAME )
     )
 
     # Requires ${CATAGORY}
-    if( CATEGORY STREQUAL "App" )
-        install(
+    IF( CATEGORY STREQUAL "App" )
+        INSTALL(
             TARGETS ${EXENAME}
             RUNTIME DESTINATION bin COMPONENT libosgworks
         )
-    else()
-        install(
-            TARGETS ${EXENAME}
-            RUNTIME DESTINATION share/${CMAKE_PROJECT_NAME}/bin COMPONENT libosgworks
-        )
-    endif()
+    ENDIF( CATEGORY STREQUAL "App" )
     SET_TARGET_PROPERTIES( ${EXENAME} PROPERTIES PROJECT_LABEL "${CATEGORY} ${EXENAME}" )
 ENDMACRO( MAKE_EXECUTABLE EXENAME CATEGORY )
 
@@ -82,12 +69,8 @@ MACRO( MAKE_WX_EXECUTABLE EXENAME )
         WIN32
         ${ARGN}
     )
-
-    link_internal( ${EXENAME}
-        backdropFX
-    )
-
     TARGET_LINK_LIBRARIES( ${EXENAME}
+        backdropFX
         ${OSGEPHEMERIS_LIBRARIES}
 #        ${OSGBULLETPLUS_LIBRARIES}
 #        ${OSGBULLET_LIBRARIES}
@@ -116,39 +99,8 @@ MACRO( ADD_EXECUTABLE_INTERNAL TRGTNAME )
     ENDIF(WIN32)
 ENDMACRO( ADD_EXECUTABLE_INTERNAL TRGTNAME )
 
-macro( link_internal TRGTNAME )
-    foreach( LINKLIB ${ARGN} )
-        TARGET_LINK_LIBRARIES( ${TRGTNAME} optimized "${LINKLIB}" debug "${LINKLIB}" )
-    endforeach()
-endmacro()
-
-macro( INSTALL_DATA _relSrcDir _destDir _exclude )
-    #   _relSrcDir - Relative directory of files to install.
-    #   _destDir - Relative destincation install directory.
-    #   _exclude - List of files that should not be installed.
-    
-    # Init. This persists from one invocation to the next, and all we do is
-    # append to it, so it must be cleared.
-    set( installList "" )
-
-    # Get the raw list of files in _srcDir.
-    file( GLOB fileList RELATIVE ${PROJECT_SOURCE_DIR}/${_relSrcDir} ${_relSrcDir}/* )
-
-    foreach( trgtFile ${fileList} )
-        # If a file is both not a directory and not on the _exclude list,
-        # prepend the relative source dir and place it on the installList.
-        list( FIND _exclude ${trgtFile} excludeFile )
-        if(    ( ${excludeFile} EQUAL -1 ) AND
-               NOT IS_DIRECTORY ${PROJECT_SOURCE_DIR}/${_relSrcDir}/${trgtFile}   )
-            list( APPEND installList ${_relSrcDir}/${trgtFile} )
-        endif()
-    endforeach()
-
-    # Debug: display the final list of files to install.
-    #message( STATUS "--- ${installList}" )
-
-    install( FILES ${installList}
-        DESTINATION ${_destDir}
-        COMPONENT libosgworks
-    )
-endmacro()
+MACRO( LINK_INTERNAL TRGTNAME )
+    FOREACH(LINKLIB ${ARGN})
+        TARGET_LINK_LIBRARIES(${TRGTNAME} optimized "${LINKLIB}" debug "${LINKLIB}${CMAKE_DEBUG_POSTFIX}")
+    ENDFOREACH(LINKLIB)
+ENDMACRO( LINK_INTERNAL TRGTNAME )

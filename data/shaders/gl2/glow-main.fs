@@ -26,28 +26,21 @@ void main()
     // fog - Maybe we have to fog the glow color, not sure.
     computeFogFragment();
 
+    // Render the glow color.
     bdfx_processedColor.rgb = bdfx_glowColor.rgb;
 
-    if( bdfx_glowColor.rgb == vec3( 0., 0., 0. ) )
+    // Compare against 0.99 rather than 1.0 to avoid roundoff error.
+    if( bdfx_processedColor.a < 0.99 )
     {
-        // Not glowing.
-        if( bdfx_processedColor.a < 0.99 )
-        {
-            // To allow glowing objects to glow through transparent
-            // objects, discard transparent objects with 0 glow color.
-            // (Another way to do this would be with NodeMasks during the
-            // cull traversal: cull would skip objects with non-1.0
-            // transparency and 0 glow.)
+        // To allow glowing objects to glow through transparent
+        // objects, discard transparent objects with 0 glow color.
+        // (Another way to do this would be with NodeMasks during the
+        // cull traversal: cull would skip objects with non-1.0
+        // transparency and 0 glow.)
+        if( bdfx_glowColor.rgb == vec3( 0., 0., 0. ) )
             bdfx_processedColor.a = 0.0; // discard using alpha test
-        }
     }
-    else
-    {
-        // Glowing.
-        if( bdfx_useGlowAlpha == 1 )
-            bdfx_processedColor.a = bdfx_glowColor.a;
-    }
-    
+
     finalize();
 }
 

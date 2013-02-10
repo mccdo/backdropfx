@@ -13,9 +13,6 @@ void main( void )
     vec4 color1 = texture2D( inputTexture1, oTC );
     // Alpha
     vec4 alpha = texture2D( inputTexture2, oTC );
-    // TBD put channel under programmatic control?
-    //   But for now, normalized distance from focal point is in red channel,
-    //   so 'r' works for DOF...
     float aVal = alpha.r;
     
     // TBD in the future, support other blend operations. For now:

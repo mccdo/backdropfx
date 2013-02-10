@@ -4,15 +4,6 @@
 
 
 //
-// Uniforms set at the RenderingEffects level.
-// (We can't use osg_SimulationTime, for example, without taking on
-// the entire Drawable overhead, CullVisitor, etc. The Effect class
-// currently avoids that entirely. However, it means we don't get
-// these "free" uniforms, and need to set them explicitly.)
-uniform float rfx_simulationTime;
-
-
-//
 // Input textures.
 uniform sampler2D inputTexture0;
 uniform sampler2D inputTexture1;
@@ -25,7 +16,4 @@ uniform vec2 texturePercent;
 //
 // Communication between vertex and fragment shader.
 varying vec2 oTC;
-
-
-// effects/declarations.common
 

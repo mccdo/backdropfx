@@ -49,7 +49,7 @@ void computeLighting()
         if( idx==7 && bdfx_lightEnable7 == 0 ) continue;
 
         vec4 VPli;
-        if( bdfx_lightSource[ idx ].absolute == 1.0 )
+        if( bdfx_lightSource[ idx ].absolute == 1 )
             VPli = bdfx_lightSource[ idx ].position;
         else
             VPli = ( osg_ViewMatrix * bdfx_lightSource[ idx ].position );

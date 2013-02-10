@@ -38,24 +38,6 @@ class LocationCB;
 
 \brief Class for rendering a sky dome with Sun and Moon.
 
-\section Sun Lighting and Clear Control
-
-If you enable the SkyDome, and you use lighting shader modules that support Sun lighting
-(that's an option to ShaderModuleVisitor), then one of the lights in your scene is the Sun.
-We're not using FFP, so the Sun is a new light source outside the FFP GL_LIGHTn paradigm.
-
-Additionally, when SkyDome is enabled, clear color is meaningless (because you clear to the
-sky dome).
-
-If you disable SkyDome, clear color becomes meaningful, and clear is performed by the next
-backdropFX component in the render pipeline, which is DepthPartition.
-
-Also when SkyDome is disabled, the Sun light source goes away; it behaves as if it is
-disabled.
-
-So, if you want Sun lighting, you must enable the SkyDome, but if you want control over
-the clear color you must disable the SkyDome. As a result, there is no way to have both
-Sun lighting and control over the clear color.
 */
 class BACKDROPFX_EXPORT SkyDome : public osg::Group, public backdropFX::BackdropCommon
 {
@@ -71,18 +53,6 @@ public:
     void traverse( osg::NodeVisitor& nv );
 
 
-    /** Enable or disable automatic time advancing. Off by default.
-    "Time" means backdropFX::LocationData::setDateTime(), which affects
-    the Sun and Moon position and sky coloring.
-    
-    Updating is handled in the SkyDomeUpdateCB, so advanced once per
-    frame. The scale factor defaults to 1.0 which maps to real-time.
-    Set to 2.0 to advance time at a 2x rate, 0.5 at a 1/2x rate, etc.
-    Negative scaling isn't supported. */
-    void setAutoAdvanceTime( bool advance=true, float scale=1.f );
-    bool getAutoAdvanceTime() const;
-    bool getAutoAdvanceTime( float& scale ) const;
-    
     /** Set the radius of the skydome, which represents the
     distance to the Sun and Moon bodies. By default, the radius
     is 384403 (distance to the moon in kilometers). */
@@ -152,9 +122,6 @@ protected:
     static const unsigned int LocationDataDirty;
     static const unsigned int DebugDirty;
     static const unsigned int AllDirty;
-
-    bool _timeAdvance;
-    float _timeAdvanceScale;
 
     unsigned int _dirty;
     float _radius;

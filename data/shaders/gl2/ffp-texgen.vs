@@ -13,13 +13,13 @@ vec4 computeTexGenLayer(vec4 inputCoord, int idx, int texGenMode)
     if( texGenMode == 0 ) return(inputCoord);
     if( texGenMode == GL_EYE_LINEAR ) // EYE LINEAR
     {
-#if 0
+        /*
         // from orange book, listing 9.22
         gl_TexCoord[i].s = dot(ecPosition, gl_EyePlaneS[i]);
         gl_TexCoord[i].t = dot(ecPosition, gl_EyePlaneT[i]);
         gl_TexCoord[i].p = dot(ecPosition, gl_EyePlaneR[i]);
         gl_TexCoord[i].q = dot(ecPosition, gl_EyePlaneQ[i]);
-#endif
+        */
         // ecPosition   == bdfx_eyeVertex (precalculated by ffp-eyecoords)
         // gl_EyePlane* == bdfx_eyePlane* (preloaded by ShaderModuleVisitor)
 

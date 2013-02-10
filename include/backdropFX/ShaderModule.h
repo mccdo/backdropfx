@@ -39,13 +39,6 @@ public:
     ShaderModuleCullCallback();
     ShaderModuleCullCallback( const ShaderModuleCullCallback& smccb );
 
-
-    typedef std::pair< std::string, osg::Shader::Type > ShaderKey;
-    typedef std::map< ShaderKey, osg::ref_ptr< osg::Shader > > ShaderMap;
-    typedef std::map< ShaderKey, unsigned int > InheritanceMap;
-    typedef std::map< osg::NodePath, osg::ref_ptr< osg::StateSet > > StateSetMap;
-
-
     /** Called during cull (by the CullVisitor). Uses the current NodePath as a key into the _stateSetMap
     to look up a StateSet containing the program for the given NodePath. This function
     then pushes the StateSet, traverses the subgraph, and pops the StateSet. */
@@ -61,7 +54,6 @@ public:
     \param inheritance Default if absent is normal inheritance. Specify \c InheritanceOverride
     to override child Node shader modules with the same semantic and shader type (VERTEX, FRAGMENT, etc). */
     void setShader( const std::string& shaderSemantic, osg::Shader* shader, const unsigned int inheritance = InheritanceDefault );
-    void setShader( const ShaderKey& shaderKey, osg::Shader* shader, const unsigned int inheritance = InheritanceDefault );
     osg::Shader* getShader( const std::string& shaderSemantic, osg::Shader::Type type );
     unsigned int getShaderInheritance( const std::string& shaderSemantic, osg::Shader::Type type ) const;
 
@@ -77,9 +69,12 @@ public:
     programs from shader modules. */
     void clearStateSetMap();
 
-    /**
-    */
-    const ShaderMap& getShaderMap() const { return( _shaderMap ); }
+
+    typedef std::pair< std::string, osg::Shader::Type > ShaderKey;
+    typedef std::map< ShaderKey, osg::ref_ptr< osg::Shader > > ShaderMap;
+    typedef std::map< ShaderKey, unsigned int > InheritanceMap;
+
+    typedef std::map< osg::NodePath, osg::ref_ptr< osg::StateSet > > StateSetMap;
 
 protected:
     ~ShaderModuleCullCallback();

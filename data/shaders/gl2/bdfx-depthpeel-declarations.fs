@@ -3,6 +3,9 @@
 // gl2/bdfx-depthpeel-declarations.fs
 
 
+// Toggle depth peeling on (1) or off (0).
+uniform int bdfx_depthPeelEnable;
+
 // TBD. Hm. Seems to work best if we treat the depth buffer as 16-bit...
 // Maybe need to make this a host-configurable value.
 const float bdfx_depthPeelOffsetR = 0.0000152590218966964; // 1.0 / (float) 0xffff

@@ -14,7 +14,6 @@
 #include <backdropFX/LocationData.h>
 #include <backdropFX/ShaderModule.h>
 #include <backdropFX/ShaderModuleVisitor.h>
-#include <backdropFX/ShaderModuleUtils.h>
 
 #include <osgwTools/CameraConfigObject.h>
 #include <osgDB/FileUtils>
@@ -77,17 +76,17 @@ backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height,
     backdropFX::Manager::instance()->setSceneData( root );
     backdropFX::Manager::instance()->rebuild( backdropFX::Manager::skyDome );
 
+    // TBD don't RTT yet. Get this working in a window first.
+    // backdropFX::Manager::instance()->setFBO( createDestinationFBO() );
+    // TBD When we do RTT, it is app responsibility to splat an fstp to display the output image.
+    //   TBD Maybe backdropFX should contain a convenience mechanism for this.
+
     // With a reasonably large FOV in the window, the sun and moon typically
     // appear too small. Scale them up to make them more visible.
     backdropFX::SkyDome& sd = backdropFX::Manager::instance()->getSkyDome();
     sd.setSunScale( 2. );
     sd.setMoonScale( 2. );
     sd.setDebugMode( backdropFX::BackdropCommon::debugVisual );
-
-    // New way to automatically advance time. Turn it on in the SkyDome.
-    // It's processed during update. In this case, we run the clock at 900x
-    // so we can see the sky dome rotate.
-    sd.setAutoAdvanceTime( true, 900.f );
 
     // TBD Proto code
     //sd->useTexture( createClouds() );
@@ -131,6 +130,11 @@ main( int argc, char ** argv )
     osg::ref_ptr< osg::Node > lz( osgDB::readNodeFile( "lzhack.osg" ) );
     root->addChild( lz.get() );
 
+    // Disable GL_LIGHT0, leaving only the Sun enabled. This is kind of a hack,
+    // as we currently can't disable this on the root node, have to disable it on
+    // a child node.
+    lz->getOrCreateStateSet()->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
+
     bool useShaderModule( true );
     if( useShaderModule )
     {
@@ -138,7 +142,7 @@ main( int argc, char ** argv )
         smv.setAttachMain( false ); // Use bdfx-main
         smv.setAttachTransform( false ); // Use bdfx-transform
         smv.setSupportSunLighting( true ); // Use shaders that light from the Sun
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        root->accept( smv );
     }
 
     osgViewer::Viewer viewer;
@@ -181,7 +185,28 @@ main( int argc, char ** argv )
         osg::Vec3( 1., 0., 0. ), osg::Vec3( 0., 0, 1. ) );
 
     while( !viewer.done() )
+    {
+        if( (sec += 15) >= 60 )
+        {
+            sec -= 60;
+            if( ++minute >= 60 )
+            {
+                minute -= 60;
+                if( ++hour >= 24 )
+                {
+                    hour -= 24;
+                    day++;
+                    dateTime.setDayOfMonth( day );
+                }
+                dateTime.setHour( hour );
+            }
+            dateTime.setMinute( minute );
+        }
+        dateTime.setSecond( sec );
+        backdropFX::LocationData::s_instance()->setDateTime( dateTime );
+
         viewer.frame();
+    }
 
     // Cleanup and exit.
     backdropFX::Manager::instance( true );

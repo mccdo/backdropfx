@@ -111,11 +111,7 @@ BackdropCommon::performClear( osg::RenderInfo& renderInfo )
 
         state.applyMode( GL_DEPTH_TEST, true );
         state.applyAttribute( _program.get() );
-#if OSG_SUPPORTS_UNIFORM_ID
-        GLint location = state.getUniformLocation( _textureUniform->getNameID() );
-#else
         GLint location = state.getUniformLocation( _textureUniform->getName() );
-#endif
         if( location >= 0 )
             _textureUniform->apply( gl2Ext, location );
         else

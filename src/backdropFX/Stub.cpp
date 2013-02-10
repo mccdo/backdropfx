@@ -1,7 +1,6 @@
 // Copyright (c) 2010 Skew Matrix Software. All rights reserved.
 
-#include "DepthPartition.h" //<backdropFX/DepthPartition.h>
-#include "DepthPartitionStage.h" //<backdropFX/DepthPartitionStage.h>
+#include <backdropFX/Stub.h>
 #include <osgDB/FileUtils>
 #include <osgUtil/CullVisitor>
 #include <osgwTools/Shapes.h>
@@ -26,49 +25,47 @@ public:
 
     META_Object(myLib,RenderStageCache);
 
-    void setRenderStage( osgUtil::CullVisitor* cv, DepthPartitionStage* rs)
+    void setRenderStage( osgUtil::CullVisitor* cv, StubStage* rs)
     {
         OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
         _renderStageMap[cv] = rs;
     }        
 
-    DepthPartitionStage* getRenderStage( osgUtil::CullVisitor* cv )
+    StubStage* getRenderStage( osgUtil::CullVisitor* cv )
     {
         OpenThreads::ScopedLock<OpenThreads::Mutex> lock(_mutex);
         return _renderStageMap[cv].get();
     }
 
-    typedef std::map< osgUtil::CullVisitor*, osg::ref_ptr< DepthPartitionStage > > RenderStageMap;
+    typedef std::map< osgUtil::CullVisitor*, osg::ref_ptr< StubStage > > RenderStageMap;
 
     OpenThreads::Mutex  _mutex;
     RenderStageMap      _renderStageMap;
 };
 
 
-DepthPartition::DepthPartition()
-  : _numPartitions( 0 )
+Stub::Stub()
 {
     internalInit();
 }
-DepthPartition::DepthPartition( const DepthPartition& dp, const osg::CopyOp& copyop )
-  : osg::Group( dp, copyop ),
-    backdropFX::BackdropCommon( dp, copyop ),
-    _numPartitions( dp._numPartitions )
+Stub::Stub( const Stub& stub, const osg::CopyOp& copyop )
+  : osg::Group( stub, copyop ),
+    backdropFX::BackdropCommon( stub, copyop )
 {
     internalInit();
 }
 void
-DepthPartition::internalInit()
+Stub::internalInit()
 {
 }
 
-DepthPartition::~DepthPartition()
+Stub::~Stub()
 {
 }
 
 
 void
-DepthPartition::traverse( osg::NodeVisitor& nv )
+Stub::traverse( osg::NodeVisitor& nv )
 {
     if( ( nv.getVisitorType() != osg::NodeVisitor::CULL_VISITOR ) )
     {
@@ -95,26 +92,26 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
     if( !rsCache )
     {
         rsCache = new RenderStageCache;
-        UTIL_MEMORY_CHECK( rsCache, "DepthPartition DepthPartitionStage Cache", );
+        UTIL_MEMORY_CHECK( rsCache, "Stub StubStage Cache", );
         setRenderingCache( rsCache.get() );
     }
 
-    osg::ref_ptr< DepthPartitionStage > dpStage = rsCache->getRenderStage( cv );
-    if( !dpStage )
+    osg::ref_ptr< StubStage > stubs = rsCache->getRenderStage( cv );
+    if( !stubs )
     {
-        dpStage = new DepthPartitionStage( *previousStage );
-        UTIL_MEMORY_CHECK( rsCache, "DepthPartition DepthPartitionStage", );
-        dpStage->setDepthPartition( this );
-        rsCache->setRenderStage( cv, dpStage.get() );
+        stubs = new StubStage( *previousStage );
+        UTIL_MEMORY_CHECK( rsCache, "Stub StubStage", );
+        stubs->setBackdropCommon( this );
+        rsCache->setRenderStage( cv, stubs.get() );
     }
     else
     {
         // Reusing custom RenderStage. Reset it to clear previous cull's contents.
-        dpStage->reset();
+        stubs->reset();
     }
 
     // PSC TBD. I don't think we need this.
-    //dpStage->setInheritedPositionalStateContainer( previousStage->getPositionalStateContainer() );
+    //stubs->setInheritedPositionalStateContainer( previousStage->getPositionalStateContainer() );
     // Instead, remove PSC from parent. If we don't do this, OSG
     // seems to revert to a default 800x600 viewport before processing
     // the RenderFX stage.
@@ -124,16 +121,10 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
     {
         // Save RenderBin
         osgUtil::RenderBin* previousRenderBin = cv->getCurrentRenderBin();
-        cv->setCurrentRenderBin( dpStage.get() );
-
-        // Add a per-cull uniform for the partition matrix.
-        cv->pushStateSet( dpStage->getPerCullStateSet() );
+        cv->setCurrentRenderBin( stubs.get() );
 
         // Traverse
         osg::Group::traverse( nv );
-
-        // Pop the per-cull uniform.
-        cv->popStateSet();
 
         // Restore RenderBin
         cv->setCurrentRenderBin( previousRenderBin );
@@ -142,36 +133,25 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
 
     // Hook our RenderStage into the render graph.
     // TBD Might need to support RenderOrder a la Camera node. For now, post-render.
-    cv->getCurrentRenderBin()->getStage()->addPreRenderStage( dpStage.get(), camera->getRenderOrderNum() );
+    cv->getCurrentRenderBin()->getStage()->addPreRenderStage( stubs.get(), camera->getRenderOrderNum() );
 }
+
 
 
 void
-DepthPartition::setNumPartitions( unsigned int numPartitions )
-{
-    _numPartitions = numPartitions;
-}
-unsigned int
-DepthPartition::getNumPartitions() const
-{
-    return( _numPartitions );
-}
-
-
-void
-DepthPartition::resizeGLObjectBuffers( unsigned int maxSize )
+Stub::resizeGLObjectBuffers( unsigned int maxSize )
 {
     if( _renderingCache.valid() )
-        const_cast< DepthPartition* >( this )->_renderingCache->resizeGLObjectBuffers( maxSize );
+        const_cast< Stub* >( this )->_renderingCache->resizeGLObjectBuffers( maxSize );
 
     osg::Group::resizeGLObjectBuffers(maxSize);
 }
 
 void
-DepthPartition::releaseGLObjects( osg::State* state ) const
+Stub::releaseGLObjects( osg::State* state ) const
 {
     if( _renderingCache.valid() )
-        const_cast< DepthPartition* >( this )->_renderingCache->releaseGLObjects( state );
+        const_cast< Stub* >( this )->_renderingCache->releaseGLObjects( state );
 
     osg::Group::releaseGLObjects(state);
 }

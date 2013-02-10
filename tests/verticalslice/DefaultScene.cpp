@@ -302,7 +302,7 @@ DefaultScene::operator()( osg::Node* node )
 #endif
 
     osg::Geode* geode = new osg::Geode;
-    osg::Vec3 size( 18., 18., 5. );
+    osg::Vec3 size( 7., 7., 3.5 );
     geode->addDrawable( osgwTools::makePlane(
         osg::Vec3( -size.x(), -size.y(), -size.z() ),
         osg::Vec3( size.x() * 2., 0., 0. ), osg::Vec3( 0., size.x() * 2., 0. ),
@@ -394,7 +394,7 @@ DefaultScene::internalDefaultScene()
 
     texPos = streamlinePositionData( loc, m, n, bound );
     geom = makeStreamline( radius, bound, m*n, color );
-    geom->setStateSet( streamlineStateSet( texPos.get(), m, n ) );
+    geom->setStateSet( streamlineStateSet( texPos, m, n ) );
     geode->addDrawable( geom.get() );
 
     loc = osg::Vec3( 0.25, -0.5, 0.1 );
@@ -402,7 +402,7 @@ DefaultScene::internalDefaultScene()
 
     texPos = streamlinePositionData( loc, m, n, bound );
     geom = makeStreamline( radius, bound, m*n, color );
-    geom->setStateSet( streamlineStateSet( texPos.get(), m, n ) );
+    geom->setStateSet( streamlineStateSet( texPos, m, n ) );
     geode->addDrawable( geom.get() );
 #endif
 

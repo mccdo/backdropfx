@@ -7,7 +7,6 @@
 // Input uniforms
 uniform mat4 bdfx_partitionMatrix;
 uniform vec4 bdfx_glowColor;
-uniform int bdfx_useGlowAlpha;
 uniform vec3 bdfx_sunPosition;
 
 

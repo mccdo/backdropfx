@@ -94,7 +94,7 @@ public:
     virtual void drawImplementation( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous );
 
     virtual unsigned int drawInit( osg::State& state, osgUtil::RenderLeaf*& previous );
-    virtual int drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous, bool& remaining );
+    virtual void drawOpaque( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous );
     virtual void drawTransparent( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous );
     virtual void drawComplete( osg::State& state, unsigned int insertStateSetPosition );
 
@@ -108,8 +108,7 @@ public:
     The texture unit is static and is therefore the same for all DepthPeelBins (though
     usually there is only one DepthPeelBin in the render graph). Currently there is no
     setter for this value, but this can be added later if needed. Currently the value
-    of s_textureUnit is 14, which means DepthPeelBin uses both units 14 and 15.
-    Beware of conflicts with shadows (BDFX_TEX_UNIT_SHADOW_MAP). */
+    of s_textureUnit is 14, which means DepthPeelBin uses both units 14 and 15. */
     static GLuint getTextureUnit() { return( s_textureUnit ); }
 
 protected:

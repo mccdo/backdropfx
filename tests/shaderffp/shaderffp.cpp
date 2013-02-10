@@ -548,7 +548,7 @@ defaultScene( osg::Group* root, int page )
 
 				osg::ref_ptr<osg::TexEnv> te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::REPLACE);
-                ss->setTextureAttributeAndModes(1, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(1, te, osg::StateAttribute::ON);
 			}
 
             // Upper right: combined (ADD) with duplicated texcoord
@@ -563,7 +563,7 @@ defaultScene( osg::Group* root, int page )
 
 				osg::ref_ptr<osg::TexEnv> te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::ADD);
-                ss->setTextureAttributeAndModes(1, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(1, te, osg::StateAttribute::ON);
 			}
 
             // Top Left: combined (DECAL) with duplicated texcoord
@@ -578,7 +578,7 @@ defaultScene( osg::Group* root, int page )
 
 				osg::ref_ptr<osg::TexEnv> te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::DECAL);
-                ss->setTextureAttributeAndModes(1, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(1, te, osg::StateAttribute::ON);
 			}
 
             // Top Right: Four layers, duplicated texcoords, ADD, BLEND, DECAL, MODULATE
@@ -599,17 +599,17 @@ defaultScene( osg::Group* root, int page )
 				ss->setTextureAttributeAndModes( 1, texTwo.get(), osg::StateAttribute::ON ); // DECAL
 				te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::DECAL);
-                ss->setTextureAttributeAndModes(1, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(1, te, osg::StateAttribute::ON);
 
 				ss->setTextureAttributeAndModes( 2, texThree.get(), osg::StateAttribute::ON ); // BLEND
 				te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::BLEND);
-                ss->setTextureAttributeAndModes(2, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(2, te, osg::StateAttribute::ON);
 
 				ss->setTextureAttributeAndModes( 3, texFour.get(), osg::StateAttribute::ON ); // ADD
 				te = new osg::TexEnv;
                 te->setMode(osg::TexEnv::ADD);
-                ss->setTextureAttributeAndModes(3, te.get(), osg::StateAttribute::ON);
+                ss->setTextureAttributeAndModes(3, te, osg::StateAttribute::ON);
 			}
 
             break;
@@ -652,14 +652,11 @@ main( int argc, char ** argv )
     }
 
     {
-        // Disable use of the simple lighting model.
-        backdropFX::Manager::instance()->setLightModelSimplified( false );
         // Convert FFP to shaders
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( true );
         smv.setAttachTransform( true );
-        smv.setConvertSceneState( true );
-        backdropFX::convertFFPToShaderModules( rootShader.get(), &smv );
+        rootShader->accept( smv );
 
         // Must run RebuildShaderSource any time the shader source changes:
         // Not just changing the source, but also setting the source for the

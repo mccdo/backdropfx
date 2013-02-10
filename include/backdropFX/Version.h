@@ -31,9 +31,9 @@ namespace backdropFX {
 /** \defgroup Version Version Utilities */
 /*@{*/
 
-#define BACKDROPFX_MAJOR_VERSION @BACKDROPFX_MAJOR_VERSION@
-#define BACKDROPFX_MINOR_VERSION @BACKDROPFX_MINOR_VERSION@
-#define BACKDROPFX_SUB_VERSION @BACKDROPFX_SUB_VERSION@
+#define BACKDROPFX_MAJOR_VERSION 0
+#define BACKDROPFX_MINOR_VERSION 3
+#define BACKDROPFX_SUB_VERSION 0
 
 /** \brief backdropFX version number as an integer.
 

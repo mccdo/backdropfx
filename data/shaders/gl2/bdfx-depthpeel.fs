@@ -8,7 +8,7 @@ BDFX INCLUDE shaders/gl2/ffp-declarations.fs
 BDFX INCLUDE shaders/gl2/bdfx-depthpeel-declarations.common
 BDFX INCLUDE shaders/gl2/bdfx-depthpeel-declarations.fs
 
-// Copyright (c) 2011 Skew Matrix Software. All rights reserved.
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
 // gl2/bdfx-depthpeel-on.fs
 
 
@@ -18,7 +18,7 @@ void depthPeel()
     // so maybe there's a way we can use it instead
     // of trying to offset the z value of the depth
     // map texture coordinate.
-
+    
     vec4 depthOffsetTC = vec4( ( bdfx_depthTC.xyz + bdfx_depthTC.w ) * 0.5, bdfx_depthTC.w );
 
     // Apply depth offset before depth compare
@@ -48,7 +48,7 @@ void depthPeel()
     //
     // When rendering the first transparent layer, the host code initializes the previous 
     // layer map to max z value (1.0, normalized).
-
+    
     // Depth peel compare fragment code
     vec4 opaqueResult = shadow2DProj( bdfx_depthPeelOpaqueDepthMap, depthOffsetTC );
     vec4 prevLayerResult = shadow2DProj( bdfx_depthPeelPreviousDepthMap, depthOffsetTC );

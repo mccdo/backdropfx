@@ -14,7 +14,3 @@ void main( void )
 
     gl_Position = gl_Vertex;
 }
-
-// effects/glow1.vs
-
-

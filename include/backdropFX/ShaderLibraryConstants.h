@@ -47,11 +47,6 @@ unit to obtain texels for rendering each streamline point sprite.
 #define BDFX_STREAMLINE_IMAGE_UNIT 7
 
 
-/** Reserved texture units, counting backwards starting from 13.
-GeForce 8800 OS X has max units of 16 (0 through 15), and depth
-peeling already uses units 14 and 15. */
-#define BDFX_TEX_UNIT_SHADOW_MAP 13
-
 
 /*@}*/
 

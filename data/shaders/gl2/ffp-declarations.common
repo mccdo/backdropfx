@@ -65,7 +65,7 @@ struct bdfx_lightSourceParameters {
     float constantAttenuation;
     float linearAttenuation;
     float quadraticAttenuation;
-    float absolute; // Either 1.0 or 0.0. This is a float because OS X always interprets an int as 0.
+    int absolute;
 };
 uniform bdfx_lightSourceParameters bdfx_lightSource[ bdfx_maxLights ];
 // Mac doesn't like this. No longer an array, manually unroll to [bdfx_maxLights]
@@ -93,11 +93,10 @@ struct bdfx_materialParameters {
     vec4 ambient;
     vec4 diffuse;
     vec4 specular;
+    float shininess;
 };
 uniform bdfx_materialParameters bdfx_frontMaterial;
 uniform bdfx_materialParameters bdfx_backMaterial;
-// Pack shininess into a single uniform.
-uniform vec2 bdfx_frontBackShininess;
 
 // Color material (simplified: on or off)
 uniform int bdfx_colorMaterial;
