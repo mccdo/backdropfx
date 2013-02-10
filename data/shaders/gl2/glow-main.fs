@@ -14,40 +14,35 @@ void main()
     init();
 
     // No depth peeling in glow/DOF pass.
+    //depthPeel();
 
     // Per pixel lighting - Probably not for glow.
 
-    // Hm. We could potentially apply a glow map here.
-    if( bdfx_texture2dEnable0 > 0 ) // should test all units, but this is faster
-        computeTexture();
+    computeTexture();
 
     // color sum - Probably not for glow.
-
     // fog - Maybe we have to fog the glow color, not sure.
     computeFogFragment();
 
+    // Render the glow color.
     bdfx_processedColor.rgb = bdfx_glowColor.rgb;
 
-    if( bdfx_glowColor.rgb == vec3( 0., 0., 0. ) )
+    if( bdfx_processedColor.a < 1.0 )
     {
-        // Not glowing.
-        if( bdfx_processedColor.a < 0.99 )
-        {
-            // To allow glowing objects to glow through transparent
-            // objects, discard transparent objects with 0 glow color.
-            // (Another way to do this would be with NodeMasks during the
-            // cull traversal: cull would skip objects with non-1.0
-            // transparency and 0 glow.)
-            bdfx_processedColor.a = 0.0; // discard using alpha test
-        }
+        // To allow glowing objects to glow through transparent
+        // objects, discard transparent objects with 0 glow color.
+        // (Another way to do this would be with NodeMasks during the
+        // cull traversal: cull would skip objects with non-1.0
+        // transparency and 0 glow.)
+        if( bdfx_glowColor.xyz == vec3( 0., 0., 0. ) )
+            discard;
+
+        // Alpha rejection (alpha test)
+        // Too faint to see?
+        if( bdfx_processedColor.a < 0.005 )
+            discard;
     }
-    else
-    {
-        // Glowing.
-        if( bdfx_useGlowAlpha == 1 )
-            bdfx_processedColor.a = bdfx_glowColor.a;
-    }
-    
+
     finalize();
 }
 

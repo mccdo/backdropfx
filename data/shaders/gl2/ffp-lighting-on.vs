@@ -38,26 +38,21 @@ void computeLighting()
     int idx;
     for( idx=0; idx<bdfx_maxLights; idx++ )
     {
-        // unrolled to avoid subscripting an array of bdfx_maxLights on the Mac
-        if( idx==0 && bdfx_lightEnable0 == 0 ) continue;
-        if( idx==1 && bdfx_lightEnable1 == 0 ) continue;
-        if( idx==2 && bdfx_lightEnable2 == 0 ) continue;
-        if( idx==3 && bdfx_lightEnable3 == 0 ) continue;
-        if( idx==4 && bdfx_lightEnable4 == 0 ) continue;
-        if( idx==5 && bdfx_lightEnable5 == 0 ) continue;
-        if( idx==6 && bdfx_lightEnable6 == 0 ) continue;
-        if( idx==7 && bdfx_lightEnable7 == 0 ) continue;
+        if( bdfx_lightEnable[ idx ] == 0 )
+            continue;
 
         vec4 VPli;
-        if( bdfx_lightSource[ idx ].absolute == 1.0 )
+        if( bdfx_lightSource[ idx ].absolute == 1 )
             VPli = bdfx_lightSource[ idx ].position;
         else
             VPli = ( osg_ViewMatrix * bdfx_lightSource[ idx ].position );
 
-        outColor += internalAmbientDiffuse( VPli,
+        float diffuseDot;
+        outColor += internalAmbientDiffuse( diffuseDot, VPli,
             Acm, Dcm, bdfx_lightSource[ idx ].ambient, bdfx_lightSource[ idx ].diffuse );
         
-        outSpec += internalSpecular( VPli.xyz, bdfx_lightSource[ idx ].specular );
+        if( diffuseDot > 0. )
+            outSpec += internalSpecular( VPli.xyz, bdfx_lightSource[ idx ].specular );
     }
 
     bdfx_processedColor = outColor;

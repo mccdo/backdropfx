@@ -1,4 +1,3 @@
-#version 120
 
 BDFX INCLUDE shaders/gl2/ffp-declarations.common
 BDFX INCLUDE shaders/gl2/ffp-declarations.fs
@@ -19,7 +18,7 @@ void main()
 
     // Per pixel lighting
 
-    if( bdfx_texture2dEnable0 > 0 ) // should test all units, but this is faster
+    if( bdfx_texture > 0 )
         computeTexture();
 
     // color sum

@@ -141,6 +141,7 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
 
 
     // Hook our RenderStage into the render graph.
+    // TBD Might need to support RenderOrder a la Camera node. For now, post-render.
     cv->getCurrentRenderBin()->getStage()->addPreRenderStage( dpStage.get(), camera->getRenderOrderNum() );
 }
 

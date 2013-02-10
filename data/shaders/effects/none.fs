@@ -7,6 +7,6 @@ BDFX INCLUDE shaders/effects/declarations.common
 
 void main( void )
 {
-    gl_FragColor = texture2D( inputTexture0, oTC );
+    gl_FragColor = texture2D( inputTextures[0], oTC );
     //gl_FragColor = vec4( 1, 0, 0, 1 );
 }

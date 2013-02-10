@@ -10,8 +10,7 @@ uniform sampler2D textureSplotch;
 
 void computeTexture()
 {
-    vec2 tc = bdfx_outTexCoord1.st;
-
+    vec2 tc = bdfx_outTexCoord[ bdfx_streamlineImageUnit ].st;
     vec4 texColor = texture2D( textureSplotch, tc );
 
     // Modulate

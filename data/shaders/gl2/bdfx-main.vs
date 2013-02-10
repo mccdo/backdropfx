@@ -5,7 +5,6 @@ BDFX INCLUDE shaders/gl2/ffp-declarations.vs
 BDFX INCLUDE shaders/gl2/ffp-declarations-fog.common
 BDFX INCLUDE shaders/gl2/ffp-declarations-fog.vs
 BDFX INCLUDE shaders/gl2/bdfx-depthpeel-declarations.common
-BDFX INCLUDE shaders/gl2/shadowmap-declarations.vs
 
 BDFX INCLUDE shaders/gl2/ffp-texgen.vs
 
@@ -21,8 +20,6 @@ void main()
     if( bdfx_normalize == 1 )
         bdfx_eyeNormal = normalize( bdfx_eyeNormal );
 
-    computeShadowTexCoords();
-
     computeLighting();
 
     computeTexGen();
@@ -32,7 +29,6 @@ void main()
     computeTransform();
     // For depth peeling. Use clip coord as depth map coord.
     bdfx_depthTC = gl_Position;
-    bdfx_depthTCBias = vec2( 0., 0. );
 
     computeFogVertex();
     

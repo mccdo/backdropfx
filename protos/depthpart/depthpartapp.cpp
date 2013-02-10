@@ -156,7 +156,7 @@ main( int argc, char ** argv )
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( true );
         smv.setAttachTransform( true );
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        root->accept( smv );
 
         assignRootShader( root.get() );
 

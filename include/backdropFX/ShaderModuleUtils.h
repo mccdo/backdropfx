@@ -5,7 +5,6 @@
 
 #include <backdropFX/Export.h>
 #include <backdropFX/ShaderModule.h>
-#include <backdropFX/ShaderModuleVisitor.h>
 #include <osgDB/FileNameUtils>
 #include <osgDB/FileUtils>
 #include <osg/Shader>
@@ -17,16 +16,6 @@ namespace backdropFX {
 
 /** \defgroup ShaderUtils Shader Module Utilities */
 /*@{*/
-
-typedef std::vector< osg::Shader* > ShaderList;
-
-/**
-*/
-BACKDROPFX_EXPORT bool convertFFPToShaderModules( osg::Node* node, backdropFX::ShaderModuleVisitor* smv=NULL );
-
-/** \brief Accumulate backdropFX state.
-*/
-BACKDROPFX_EXPORT osg::StateSet* accumulateStateSetsAndShaderModules( ShaderModuleCullCallback::ShaderMap& shaders, const osg::NodePath& nodePath );
 
 /** Dump a shader source with line numbers. OSG 2.8.3 did not support
 this feature. The code is from the OSG 2.9.x series.
@@ -85,13 +74,6 @@ BACKDROPFX_EXPORT std::string getShaderSemantic( const std::string& name );
 You must #include <osg/FileNameUtils> to use this macro.
 */
 #define __LOAD_SHADER(__s,__t,__n) \
-    /* Check for possible cut-n-paste errors */ \
-    if( ( ( __t == osg::Shader::VERTEX ) && \
-          ( std::string(__n).find( ".vs" ) == std::string::npos ) ) || \
-        ( ( __t == osg::Shader::FRAGMENT ) && \
-          ( std::string(__n).find( ".fs" ) == std::string::npos ) ) ) \
-            osg::notify( osg::WARN ) << "Possible shader type/name mismatch for " << __n << std::endl; \
-    /* Create and load the shader. */ \
     __s = new osg::Shader( __t ); \
     if( __s.valid() ) \
     { \

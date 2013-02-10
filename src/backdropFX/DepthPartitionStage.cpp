@@ -97,12 +97,7 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
     _stageDrawnThisFrame = true;
 
     osg::notify( osg::DEBUG_FP ) << "backdropFX: DepthPartitionStage::draw" << std::endl;
-    UTIL_GL_ERROR_CHECK( "DepthPartitionStage draw start" );
 
-
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.pushCamera( _camera );
 
     osg::State& state( *renderInfo.getState() );
     const unsigned int contextID( state.getContextID() );
@@ -124,10 +119,18 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
     {
         osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, 0 );
     }
-    UTIL_GL_ERROR_CHECK( "DepthPartitionStage post FBO" );
+    UTIL_GL_ERROR_CHECK( "DepthPartitionStage" );
 
-    state.applyAttribute( getViewport() );
-
+    const osg::Viewport* vp = dynamic_cast< const osg::Viewport* >(
+        state.getLastAppliedAttribute( osg::StateAttribute::VIEWPORT ) );
+    if( vp != NULL )
+        vp->apply( state );
+    else
+    {
+        const osg::Viewport* vp = this->getViewport();
+        if( vp != NULL )
+            state.applyAttribute( vp );
+    }
 
     //
     // Render the input texture image to clear the depth buffer.
@@ -207,13 +210,14 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
         }
 
         // TBD should be tied to debug.
-        // Debugging aid: Add a pinkish tint to odd partitions.
+        // Debugging aid: Add a pinkish tink to odd partitions.
         // This is done in bdfx-finalize.fs.
         if( idx & 1 )
             _partitionDebug->set( osg::Vec4f( .5f, 0.f, 0.f, 0.f ) );
         else
             _partitionDebug->set( osg::Vec4f( 0.f, 0.f, 0.f, 0.f ) );
 
+        // TBD DepthPeel
         if( dumpImages )
         {
             // If dumping images, pass the current partition number to the DepthPeelBin.
@@ -230,14 +234,14 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
             }
         }
 
-        // Must clear the depth buffer for each pass.
-        // Not really necessary if depth peeling is on, but required when
-        // depth peeling is off.
-        glClear( GL_DEPTH_BUFFER_BIT );
-
         // Render child stages.
         drawPreRenderStages( renderInfo, previous );
 
+        // Normally, this is a no-op, as there are no direct children to
+        // DepthPartition, only the DepthPeel node (which is rendered in the
+        // drawPreRenderStages() call above). However, if DepthPeel is disabled,
+        // then the scene is attached directly to DepthPartition as a child
+        // Group, and in thin case drawImplementation() renders the scene.
         //osg::Timer timerA;
         RenderBin::drawImplementation( renderInfo, previous );
         //osg::notify( osg::ALWAYS ) << "DepthPart drawImpl: " << timerA.time_s() << std::endl;
@@ -270,14 +274,10 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
 
     if( state.getCheckForGLErrors() != osg::State::NEVER_CHECK_GL_ERRORS )
     {
-        std::string msg( "at DPRS draw end" );
+        std::string msg( "at SRS draw end" );
         UTIL_GL_ERROR_CHECK( msg );
         UTIL_GL_FBO_ERROR_CHECK( msg, fboExt );
     }
-
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.popCamera();
 }
 
 void

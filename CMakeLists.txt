@@ -1,20 +1,15 @@
-CMAKE_MINIMUM_REQUIRED( VERSION 2.8.8 )
+CMAKE_MINIMUM_REQUIRED( VERSION 2.8 )
 PROJECT( backdropFX )
 
 SET( CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}" )
 
-SET(BACKDROPFX_MAJOR_VERSION 0)
-SET(BACKDROPFX_MINOR_VERSION 3)
-SET(BACKDROPFX_SUB_VERSION 0)
-SET(BACKDROPFX_VERSION ${BACKDROPFX_MAJOR_VERSION}.${BACKDROPFX_MINOR_VERSION}.${BACKDROPFX_SUB_VERSION})
+SET( LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all libraries." )
+MAKE_DIRECTORY( ${LIBRARY_OUTPUT_PATH} )
+MARK_AS_ADVANCED( LIBRARY_OUTPUT_PATH )
 
-set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin )
-set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib )
-if( WIN32 )
-    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} )
-else()
-    set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY} )
-endif()
+SET( EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables." )
+MAKE_DIRECTORY( ${EXECUTABLE_OUTPUT_PATH} )
+MARK_AS_ADVANCED( EXECUTABLE_OUTPUT_PATH )
 
 IF( WIN32 AND MSVC )
     OPTION( WIN32_USE_MP "Build with multiple processes (/MP option; VS 2005 and above)." ON )
@@ -27,36 +22,31 @@ ENDIF( WIN32 AND MSVC )
 INCLUDE( CMakeMacros )
 
 include( FindOSGHelper )
+include( FindBulletHelper )
 
 FIND_PACKAGE( OSGEphemeris REQUIRED )
-FIND_PACKAGE( osgWorks 2.0.0 REQUIRED )
-if( osgWorks_FOUND )
-    include( ${osgWorks_USE_FILE} )
-endif()
+FIND_PACKAGE( OSGBulletPlus )
+FIND_PACKAGE( OSGBullet )
+FIND_PACKAGE( OSGWorks REQUIRED )
 FIND_PACKAGE( OSGWxTree )
 FIND_PACKAGE( wxWidgets COMPONENTS base core gl )
 FIND_PACKAGE( OpenGL REQUIRED )
-set( BOOST_ROOT "Please specify" CACHE PATH "Root directory where Boost is installed" )
-FIND_PACKAGE( Boost 1.36.0 REQUIRED )
+FIND_PACKAGE( Boost REQUIRED )
 FIND_PACKAGE( PNG REQUIRED )
-
-# Removed per redmine issue 384.
-# include( FindBulletHelper )
-# FIND_PACKAGE( OSGBulletPlus )
-# FIND_PACKAGE( OSGBullet )
 
 # Add project-wide include & lib paths
 INCLUDE_DIRECTORIES( 
     ${PROJECT_SOURCE_DIR}/include
     ${OSGEPHEMERIS_INCLUDE_DIR}
+    ${OSGWORKS_INCLUDE_DIR}
     ${OSG_INCLUDE_DIRS}
     ${OPENGL_INCLUDE_DIR}
     ${Boost_INCLUDE_DIRS}
     ${PNG_INCLUDE_DIR}
 )
-#IF( OSGBULLETPLUS_FOUND )
-#    INCLUDE_DIRECTORIES( ${OSGBULLETPLUS_INCLUDE_DIR} )
-#ENDIF( OSGBULLETPLUS_FOUND )
+IF( OSGBULLETPLUS_FOUND )
+    INCLUDE_DIRECTORIES( ${OSGBULLETPLUS_INCLUDE_DIR} )
+ENDIF( OSGBULLETPLUS_FOUND )
 IF( OSGBULLET_FOUND )
     INCLUDE_DIRECTORIES( ${OSGBULLET_INCLUDE_DIR} )
 ENDIF( OSGBULLET_FOUND )
@@ -76,6 +66,10 @@ IF( OSGWXTREE_FOUND )
         ${wxWidgets_INCLUDE_DIRS}
     )
 ENDIF( OSGWXTREE_FOUND )
+# HACK: Not sure why this is necessary, but linket can't find debug lib without it.
+LINK_DIRECTORIES(
+    ${EXECUTABLE_OUTPUT_PATH}/Debug
+)
 
 OPTION( BDFX_PROFILE_ENABLE "Select to enable profiling code and profiling console output." OFF )
 IF( BDFX_PROFILE_ENABLE )
@@ -103,19 +97,6 @@ IF( BDFX_BUILD_EXAMPLES )
     ADD_SUBDIRECTORY( examples )
 ENDIF( BDFX_BUILD_EXAMPLES )
 
-option( BDFX_INSTALL_DATA "Enable to add the data directory to the install target" ON )
-if( BDFX_INSTALL_DATA )
-    set( dataInstDir "share/${CMAKE_PROJECT_NAME}" )
-    set( dataRelDir "data" )
-      INSTALL_DATA( ${dataRelDir} ${dataInstDir}/${dataRelDir} "" )
-    set( dataRelDir "data/shaders" )
-      INSTALL_DATA( ${dataRelDir} ${dataInstDir}/${dataRelDir} "" )
-    set( dataRelDir "data/shaders/effects" )
-      INSTALL_DATA( ${dataRelDir} ${dataInstDir}/${dataRelDir} "" )
-    set( dataRelDir "data/shaders/gl2" )
-      INSTALL_DATA( ${dataRelDir} ${dataInstDir}/${dataRelDir} "" )
-endif()
-
 ADD_SUBDIRECTORY( src/backdropFX )
 
 
@@ -140,35 +121,3 @@ if( BACKDROPFX_DOCUMENTATION )
 
     add_subdirectory( doc/images )
 endif()
-
-if(MSVC)
-    install(
-        DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/\${CMAKE_INSTALL_CONFIG_NAME}/
-        DESTINATION lib
-        USE_SOURCE_PERMISSIONS
-        COMPONENT libosgworks-dev
-        FILES_MATCHING PATTERN "*.pdb"
-    )
-endif(MSVC)
-
-#
-#Setup and install the fpc file
-
-if(WIN32)
-    set(BACKDROPFX_FPC_LIBRARIES "/libpath:\"\${libdir}\" backdropFX.lib")
-    set(BACKDROPFX_FPC_INCLUDES "/I\"\${includedir}\"")
-else(WIN32)
-    set(BACKDROPFX_FPC_INCLUDES "-I\${includedir}")
-    if(APPLE)
-        set(BACKDROPFX_FPC_LIBRARIES "-L\${libdir} -lbackdropFX")
-    else(APPLE)
-        set(BACKDROPFX_FPC_LIBRARIES "-L\${libdir} -lbackdropFX")
-    endif(APPLE)
-endif(WIN32)
-
-configure_file(data/backdropfx.fpc.in
-  "${PROJECT_BINARY_DIR}/lib/flagpoll/backdropfx.fpc" @ONLY)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/flagpoll/backdropfx.fpc
-        DESTINATION lib/flagpoll )
-

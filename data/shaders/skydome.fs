@@ -11,6 +11,8 @@ void main()
     // No need to draw the sky that is below the ground.
     const float horizLimit = 0.15;
     float dotUp = dot( oTC, up );
+    if( dotUp < -horizLimit )
+        discard;
     // Mix between the zenith and horizon colors.
     float horizonMixControl = clamp( dotUp, 0.0, horizLimit ) / horizLimit;
 
@@ -31,8 +33,5 @@ void main()
         duskHorizon * duskCoeff + nightHorizon * nightCoeff;
     
     // TBD GL3
-    vec4 color = mix( horizonColor, zenithColor, horizonMixControl );
-    if( dotUp < -horizLimit )
-        color.a = 0.0; // discard using alpha test
-    gl_FragColor = color;
+    gl_FragColor = mix( horizonColor, zenithColor, horizonMixControl );
 }

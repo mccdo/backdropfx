@@ -12,9 +12,12 @@ void internalSunLighting( out vec4 diffResult, out vec4 specResult,
     const vec4 sunColor = vec4( 1., 1., 1., 1. );
 
     float diffuseDot;
-    diffResult = internalDiffuse( VPli, Dcm, sunColor );
+    diffResult = internalDiffuse( diffuseDot, VPli, Dcm, sunColor );
 
-    specResult = internalSpecular( VPli.xyz, sunColor );
+    if( diffuseDot > 0. )
+        specResult = internalSpecular( VPli.xyz, sunColor );
+    else
+        specResult = vec4( 0., 0., 0., 0. );
 }
 
 // END gl2/bdfx-lighting-utilities.common

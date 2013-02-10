@@ -33,16 +33,18 @@ void computeLighting()
     const int idx = 0;
 
     vec4 VPli;
-    if( bdfx_lightSource[ idx ].absolute == 1.0 )
+    if( bdfx_lightSource[ idx ].absolute == 1 )
         VPli = bdfx_lightSource[ idx ].position;
     else
         VPli = ( osg_ViewMatrix * bdfx_lightSource[ idx ].position );
 
-    vec4 lightResult = internalAmbientDiffuse( VPli,
+    float diffuseDot;
+    vec4 lightResult = internalAmbientDiffuse( diffuseDot, VPli,
         Acm, Dcm, bdfx_lightSource[ idx ].ambient, bdfx_lightSource[ idx ].diffuse );
 
     vec4 specResult = vec4( 0., 0., 0., 0. );
-    specResult += internalSpecular( VPli.xyz, bdfx_lightSource[ idx ].specular );
+    if( diffuseDot > 0. )
+        specResult += internalSpecular( VPli.xyz, bdfx_lightSource[ idx ].specular );
 
     vec3 emissiveAmbient = bdfx_frontMaterial.emissive.rgb +
         ( Acm.rgb * bdfx_lightModel.ambient.rgb );

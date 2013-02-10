@@ -63,14 +63,6 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
     osg::notify( osg::DEBUG_INFO ) << "backdropFX: SkyDomeStage::draw" << std::endl;
 
 
-    // Fix for redmine 434. Camera must be set in renderInfo.
-    // Required for any draw-time code that queries the camera
-    // from renderInfo, such as OcclusionQueryNode.
-    // The parent camera/RenderStage doesn't do this because we
-    // are pre-render stages; it hasn't had a chance yet.
-    if( _camera )
-        renderInfo.pushCamera( _camera );
-
     osg::State& state( *renderInfo.getState() );
     const unsigned int contextID( state.getContextID() );
     osg::FBOExtensions* fboExt( osg::FBOExtensions::instance( contextID, true ) );
@@ -93,8 +85,6 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
         osgwTools::glBindFramebuffer( fboExt, GL_READ_FRAMEBUFFER_EXT, 0 );
     }
 
-    state.applyAttribute( getViewport() );
-
     // Draw
     {
         UTIL_GL_ERROR_CHECK( "SDS pre performClear()" );
@@ -108,24 +98,27 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
 
         // I believe this has the net result of restoring OpenGL to the
         // current state at the corresponding SkyDome node.
-        //state.apply();
+        state.apply();
     }
 
     const bool dumpImages = (
         ( _backdropCommon->getDebugMode() & backdropFX::BackdropCommon::debugImages ) != 0 );
     if( dumpImages )
     {
-        osg::Viewport* vp = getViewport();
-        GLint x( 0 ), y( 0 );
+        osg::Viewport* vp = this->getViewport();
+        GLint x, y;
         GLsizei w, h;
         if( vp != NULL )
         {
-            w = vp->width();
-            h = vp->height();
+            const GLint x( vp->x() );
+            const GLint y( vp->y() );
+            const GLsizei w( vp->width() );
+            const GLsizei h( vp->height() );
         }
         else
         {
             osg::notify( osg::WARN ) << "BDFX: SkyDome: Null viewport dumping images. Using 512x512." << std::endl;
+            x = y = 0;
             w = h = 512;
         }
 
@@ -144,10 +137,6 @@ SkyDomeStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& previous 
         UTIL_GL_ERROR_CHECK( msg );
         UTIL_GL_FBO_ERROR_CHECK( msg, fboExt );
     }
-
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.popCamera();
 }
 
 void

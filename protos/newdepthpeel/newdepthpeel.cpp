@@ -36,11 +36,7 @@ createProjection( double aspect )
 class ResizeHandler : public osgGA::GUIEventHandler
 {
 public:
-    ResizeHandler( osgViewer::Viewer& viewer, unsigned int width, unsigned int height )
-      : _viewer( viewer ),
-        _maxWidth( width ),
-        _maxHeight( height )
-    {}
+    ResizeHandler( osgViewer::Viewer& viewer ) : _viewer( viewer ) {}
     ~ResizeHandler() {}
 
     virtual bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa )
@@ -51,19 +47,16 @@ public:
         {
         case osgGA::GUIEventAdapter::RESIZE:
         {
-            unsigned int width = ( unsigned int )ea.getWindowWidth();
-            unsigned int height = ( unsigned int )ea.getWindowHeight();
+#if 0
+            int width = ea.getWindowWidth();
+            int height = ea.getWindowHeight();
 
             const double aspect = (double) width / (double) height;
             _viewer.getCamera()->setProjectionMatrix( createProjection( aspect ) );
             _viewer.getCamera()->setViewport( new osg::Viewport( 0, 0, width, height ) );
 
-            if( ( width > _maxWidth ) || ( height > _maxHeight ) )
-            {
-                _maxWidth = osg::maximum< unsigned int >( width, _maxWidth );
-                _maxHeight = osg::maximum< unsigned int >( height, _maxHeight );
-                backdropFX::Manager::instance()->setTextureWidthHeight( _maxWidth, _maxHeight );
-            }
+            backdropFX::Manager::instance()->setTextureWidthHeight( width, height );
+#endif
         }
         }
         return( handled );
@@ -71,8 +64,6 @@ public:
 
 protected:
     osgViewer::Viewer& _viewer;
-
-    unsigned int _maxWidth, _maxHeight;
 };
 /** \endcond */
 
@@ -132,10 +123,8 @@ postRender( osgViewer::Viewer& viewer )
 }
 
 void
-viewerSetUp( osgViewer::Viewer& viewer, unsigned int width, unsigned int height, osg::Node* node )
+viewerSetUp( osgViewer::Viewer& viewer, double aspect, osg::Node* node )
 {
-    double aspect = (double)width / (double)height;
-
     viewer.setThreadingModel( osgViewer::ViewerBase::SingleThreaded );
     viewer.setSceneData( node );
 
@@ -144,7 +133,7 @@ viewerSetUp( osgViewer::Viewer& viewer, unsigned int width, unsigned int height,
 
     viewer.addEventHandler( new osgViewer::StatsHandler );
     viewer.addEventHandler( new osgViewer::ThreadingHandler );
-    viewer.addEventHandler( new ResizeHandler( viewer, width, height ) );
+    viewer.addEventHandler( new ResizeHandler( viewer ) );
 
     osgGA::TrackballManipulator* tbm = new osgGA::TrackballManipulator;
     viewer.setCameraManipulator( tbm );
@@ -205,7 +194,7 @@ main( int argc, char ** argv )
         smv.setAttachMain( true );
         smv.setAttachTransform( true );
         smv.setSupportSunLighting( false );
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        root->accept( smv );
 
         backdropFX::RebuildShaderModules rsm;
         root->accept( rsm );
@@ -215,7 +204,7 @@ main( int argc, char ** argv )
     viewer.setUpViewInWindow( 20, 30, winW, winH );
     viewer.realize();
 
-    viewerSetUp( viewer, winW, winH, root.get() );
+    viewerSetUp( viewer, (double)winW / (double)winH, root.get() );
     osgDB::writeNodeFile( *root, "out.osg" );
     viewer.getCamera()->setClearColor( osg::Vec4( .1, .2, .5, 1. ) );
 

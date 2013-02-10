@@ -12,11 +12,6 @@
 namespace backdropFX {
 
 
-/** \class backdropFX::DepthPartition DepthPartition.h backdropFX/DepthPartition.h
-
-\brief Renders frustum in back-to-front ordered partitions.
-
-*/
 class BACKDROPFX_EXPORT DepthPartition : public osg::Group, public backdropFX::BackdropCommon
 {
 public:

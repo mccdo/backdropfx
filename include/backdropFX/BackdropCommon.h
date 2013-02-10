@@ -45,7 +45,7 @@ public:
 
 
     
-    /** Specify the FBO to render to. NULL sets the FBO binding to 0. */
+    /** Specify the FBO to render to. NULL sets the FBO binfing to 0. */
     virtual void setFBO( osg::FrameBufferObject* fbo );
     osg::FrameBufferObject* getFBO() const;
 
@@ -82,7 +82,7 @@ public:
     void releaseGLObjects( osg::State* state ) const;
 #endif
 protected:
-    virtual ~BackdropCommon();
+    ~BackdropCommon();
     void internalInit();
 
     void processCull( osgUtil::CullVisitor* cv );
@@ -122,7 +122,7 @@ public:
     void setBackdropCommon( BackdropCommon* bc );
 
 protected:
-    virtual ~BackdropCommonStage();
+    ~BackdropCommonStage();
 
     BackdropCommon* _bc;
 };

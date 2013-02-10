@@ -6,18 +6,13 @@
 #include <backdropFX/Export.h>
 #include <backdropFX/BackdropCommon.h>
 #include <backdropFX/SkyDome.h>
-#include <backdropFX/ShadowMap.h>
 #include <backdropFX/DepthPartition.h>
-#include <backdropFX/DepthPeelBin.h>
 #include <backdropFX/RenderingEffects.h>
-#include <backdropFX/LightInfo.h>
 #include <osg/Referenced>
 #include <osg/ref_ptr>
 #include <osg/Group>
-#include <osg/Fog>
 #include <osg/FrameBufferObject>
 #include <osg/Texture2D>
-
 
 
 namespace backdropFX
@@ -38,10 +33,9 @@ setSceneData(), then call rebuild() to create the managed scene graph.
 To attach backdropFX to a viewer, use getManagedRoot(), and add
 the returned Group node to your Viewer or SceneView object.
 
-Before rendering, you must specify the size of the internal textures that backdropFX 
-is using as framebuffers by using the function setTextureWidthHeight(). Usually,
-this is the size of your window or screen. For SceneView-based multi-view usage,
-this is the size of your largest viewport (ignoring x and y).
+Before rendering, you must specify the size of the internal textures backdropFX is 
+using as framebuffers by using the function setTextureWidthHeight(). Usually,
+this is the size of your window or screen.
 
 The classes that Manager creates and manages are exposed to the application
 for direct control. For example, to control the SkyDome directly, call
@@ -55,7 +49,7 @@ public:
 
     /** Access the managed root. 
 	This is the top-most root node of the backdropFX hierarchy. Add the return 
-	value to a Camera. For example in the case of SceneView:
+	value to a Camera. For example in the case of SceneView, you might do this:
     \code
         sceneView->setSceneData( Manager::instance()->getManagedRoot() );
     \endcode */
@@ -86,103 +80,34 @@ public:
     void rebuild( unsigned int featureFlags=defaultFeatures );
     static unsigned int defaultFeatures;
     static unsigned int skyDome;
-    static unsigned int shadowMap;
     static unsigned int depthPeel;
 
+    // Lighting and shadow controls
+    // TBD
 
     /** Directly access the SkyDome class. */
     SkyDome& getSkyDome();
-    /** Directly access the ShadowMap class. */
-    ShadowMap& getShadowMap();
     /** Directly access the DepthPartition class. */
     DepthPartition& getDepthPartition();
     /** Directly access the DepthPeel class. */
     osg::Group& getDepthPeel();
-    /** Directly access the effects Camera object. */
-    osg::Camera& getEffectsCamera();
+    /** Directly access the glow Camera class. */
+    osg::Camera& getGlowCamera();
     /** Directly access the RenderingEffects class. */
     RenderingEffects& getRenderingEffects();
 
     /** Access to rendered output. Color buffer A is the combined output
     of the SkyDome, DepthPartition, and DepthPeel classes. */
     osg::Texture2D* getColorBufferA();
-    /** Get a depth map produced by ShadowMap. */
-    osg::Texture2D* getShadowDepthMap( unsigned int index );
-    /** Access to rendered output. Color buffer Glow is the first output
-    of the effects Camera, a non-blurred glow map. */
+    /** Access to rendered output. Color buffer Glow is the output
+    of the glow Camera, a non-blurred glow map. */
     osg::Texture2D* getColorBufferGlow();
-    /** Access to rendered output. Depth buffer is the second output
-    of the effects Camera and contains:
-      \li red channel: focal-distance processed depth values in the range 0.0 (in sharp focus) to 1.0 (fully blurred).
-      \li green channel: heat distortion normalized distance, 0.0 for no distortion and 1.0 for full distortion.
-    */
-    osg::Texture2D* getDepthBuffer();
-
-
-    /** Full scene fog state. */
-    void setFogState( osg::Fog* fog, bool enable=true );
-    osg::Fog* getFog();
-    bool getFogEnable() const;
-
-    /** Sets light position uniform and, if shadows are enabled, updates
-    the ShadowMap's ShadowInfo position field. There are 9 supported lights,
-    numbered 0-8. 0-7 are the FFP lights corresponding to GL_LIGHT0 through
-    GL_LIGHT7. Light 8 is the Sun. (TBD these light values should not be
-    literals, need to define some constants for them.
-    
-    Note that these methods are wrappers around the identical methods in ShadowMap.
-    Using these entry points additionally sets top-level uniforms to controls the
-    lights for shading and enable/disable. */
-    void setLightingEnable( bool enable=true );
-    bool getLightingEnable() const;
-    void setLight( osg::Light* light, bool enable=true );
-    void setLightEnable( unsigned int lightNum, bool enable );
-    bool getLightEnable( unsigned int lightNum ) const;
-    unsigned int getNumLights() const { return( _lightInfoVec.size() ); }
-    /** Optimized function for updating the position. Sets the position
-    uniform, but does not re-evaluate the set of shader modules to support
-    lighting. 'enable' is ignored, except as pass-through to shadows.
-    TBD: the enable parameter is really ugly and should be removed. */
-    void setLightPosition( unsigned int lightNum, const osg::Vec4& pos, bool enable=true );
-    osg::Vec4 getLightPosition( unsigned int lightNum ) const;
-
-    /** Enables a simplified light model designed to reduce the number of
-    uniforms that would be required to support full FFP lighting. The
-    simplified model is enabled by default.
-    
-    In the simplified model:
-    \li No support for emissive material.
-    \li Ambient material is taken from diffuse material.
-    \li Light sources don't emit ambient light. Use \c setLightModelAmbient to specify global ambient light.
-    \li spot lights and light attenuation are not supported.
-    Note that ShaderModuleVisitor calls \c getLightModelSimplified when
-    converting FFP Material attributes to uniforms.
-    */
-    void setLightModelSimplified( bool enable=true );
-    bool getLightModelSimplified() const;
-    /** Sets the global ambient light in the entire scene.
-    Default is osg::Vec4( 0.2, 0.2, 0.2, 1.0 ).
-    */
-    void setLightModelAmbient( const osg::Vec4& ambient );
-    osg::Vec4 getLightModelAmbient() const;
-
 
     /** Specify texture dimensions. In typical usage, pass the window width and height.
-    For SceneView multi-view rendering, pass the largest viewport width and height, ignoring x and y.
     \bold You must call this before attempting to render. There is no default. \endbold
     */
     void setTextureWidthHeight( unsigned int texW, unsigned int texH );
     void getTextureWidthHeight( unsigned int& texW, unsigned int& texH ) const;
-
-    /** Add a vector of uniforms to the effects camera StateSet. This is called
-    by RenderingEffects::setEffectsSet() when an Effect is added to the EffectVector.
-    This allows each Effect to contain its own control parameters (such as DOF
-    focal distance), which is used in the effects pass to create the depth map input
-    to the Effect, but not the parameter value isn't actually used by the Effect itself.
-    */
-    void addEffectsPassUniforms( Effect::UniformVector& uniforms );
-    /** Remove a vector of uniforms from the effects camera StateSet. */
-    void removeEffectsPassUniforms( Effect::UniformVector& uniforms );
 
     /** Debug mode control. Pass zero to disable debugging (the default),
     or pass a bitwise OR'd set of debug flags to enable specific debugging features.
@@ -199,59 +124,34 @@ protected:
 
     void internalInit();
 
-    void setSceneFogState( osg::Node* node );
-    void setSceneShadowState( bool shadowsEnabled );
-    void setSceneLightState();
-
     void resize();
 
     osg::ref_ptr< osg::Node > _sceneData;
-
-    // Fog state
-    bool _fogEnable;
-    osg::ref_ptr< osg::Fog > _fog;
-    osg::ref_ptr< osg::Shader > _fogOnVertex, _fogOffVertex;
-    osg::ref_ptr< osg::Shader > _fogOnFragment, _fogOffFragment;
-
-    // Shadow shaders (avoids reloads when toggles on/off).
-    osg::ref_ptr< osg::Shader > _shadowsOnVertex, _shadowsOffVertex;
-    osg::ref_ptr< osg::Shader > _shadowsOnFragment, _shadowsOffFragment;
-    bool _lightModelSimplified;
-    osg::Vec4 _lightModelAmbient;
-
-    // Light state
-    bool _lightingEnable;
-    LightInfoVec _lightInfoVec;
-    osg::ref_ptr< osg::Shader > _lightSunVertex, _lightOnVertex, _lightSunOnlyVertex, _light0Vertex, _lightOffVertex;
 
     //
     // Stucture:
     //
     // _rootNode
     //     _skyDome
-    //     _shadowMap
     //     _depthPart
     //         _depthPeel
     //             _sceneData
-    //     _effectsCamera
+    //     _glowCamera
     //     _renderFX
     //
     osg::ref_ptr< osg::Group > _rootNode;
+    // shadow maps
     osg::ref_ptr< SkyDome > _skyDome;
-    osg::ref_ptr< ShadowMap > _shadowMap;
     osg::ref_ptr< DepthPartition > _depthPart;
     osg::ref_ptr< osg::Group > _depthPeel;
     osg::ref_ptr< RenderingEffects > _renderFX;
 
-    osg::ref_ptr< osg::Camera > _effectsCamera;
+    // TBD temp, prototype code
+    osg::ref_ptr< osg::Camera > _glowCamera;
 
     osg::ref_ptr< osg::FrameBufferObject > _colorBufferAFBO;
     osg::ref_ptr< osg::Texture2D > _colorBufferA;
     osg::ref_ptr< osg::Texture2D > _colorBufferGlow;
-    osg::ref_ptr< osg::Texture2D > _depthBuffer;
-
-    osg::ref_ptr< osg::Texture2D > _shadowDepthMap;
-    osg::ref_ptr< osg::FrameBufferObject > _shadowDepthMapFBO;
 
     osg::ref_ptr< osg::FrameBufferObject > _fbo;
 
@@ -260,8 +160,6 @@ protected:
     osg::ref_ptr< osg::Uniform > _widthHeight;
 
     unsigned int _dm;
-
-    osg::ref_ptr< backdropFX::DepthPeelBin > _depthPeelBinProxy;
 };
 
 
@@ -282,15 +180,15 @@ protected:
 \section overview Overview and Features
 
 backdropFX is an OSG-based rendering system with several powerful features:
-/li Sky Dome with Sun and Moon positioned according to lat/long coordinates and time of day, 
-with scene illuminated by the Sun
-/li Depth partitioning to minimize the near plane without sacrificing depth buffer precision
-/li Depth peeling for order-independent transparency
-/li A rendering effects pipeline for screen space effects, such as glow, depth of field, and tone mapping
-/li Fully shader-based rendering with extensive support for converting a scene graph FFP state 
-attributes to 100 percent shader-based
-/li Support for separately compiled shader modules (also known as shader composition)
-/li Debugging and profiling aids for developers
+- Sky Dome with Sun and Moon positioned according to lat/long coordinates and time of day, 
+with scene illuminated by the Sun.
+- Depth partitioning to minimize the near plane without sacrificing depth buffer precision.
+- Depth peeling for order-independent transparency.
+- A rendering effects pipeline for screen space effects, such as glow, depth of field, and tone mapping.
+- Fully shader-based rendering with extensive support for converting a scene graph FFP state 
+attributes to 100 percent shader-based.
+- Support for separately compiled shader modules (also known as shader composition).
+- Debugging and profiling aids for developers.
 
 Your application primarily interfaces with the backdropFX::Manager class. Manager creates
 a scene graph of custom nodes to implement several rendering algorithms. Your scene graph
@@ -303,27 +201,27 @@ backdropFX::RenderingEffects use custom osgUtil::RenderStage classes to implemen
 algorithms and support rendering to texture.
 Depth peeling is a standard osg::Group node that uses a custom RenderBin called
 DepthPeelBin.
-The effects Camera creates a glow map used by the glow effect, and a depth map used by the DOF and heat distortion effects.
+The Glow Camera currently creates a glow map, but in the future it will also provide
+support for other rendering effects.
 
-During the draw traversal of each form, the following operations occur:
-/li If sky dome rendering is enabled, the SkyDome class renders the sky background, Sun, and Moon.
-/li The DepthPartition class divides the view frustum into partitions. If depth peeling is enabled,
+During the draw traversal of each form, the following operations occur.
+- If sky dome rendering is enabled, the SkyDome class renders the sky background, Sun, and Moon.
+- The DepthPartition class divides the view frustum into partitions. If depth peeling is enabled,
 the following rendering occurs:
-/li The DepthPeel class renders the application scene graph one or more times into depth peel 
+  - The DepthPeel class renders the application scene graph one or more times into depth peel 
   layer framebuffer objects.
-/li The DepthPeel class composites the layers together in back to front order.
-
-If depth peeling is disabled:
-/li DepthPartition renders the application scene graph directly.
-Note the DepthPartition node is always present. When disabled, it computes one partition.
-  
-/li The DepthPartition stores its color output in a texture map and is made available to downstream
+  - The DepthPeel class composites the layers together in back to front order.
+  .
+  If depth peeling is disabled:
+  - DepthPartition renders the application scene graph directly.
+  .
+  Note the DepthPartition node is always present. When disabled, it computes one partition.
+  .
+- The DepthPartition stores its color output in a texture map and is made available to downstream
 rendering stages with a call to backdropFX::Manager::getColorBufferA().
-/li For RenderingEffects that require it, the effects Camera performs its own rendering pass to
-create input data, such as glow and depth maps. The output is available to
-downstream rendering stages with a call to backdropFX::Manager::getColorBufferGlow() and
-backdropFX::Manager::getDepthBuffer().
-/li The RenderingEffects node processes its list of effects. The RenderingEffects node
+- If glow is enabled, the Glow Camera creates a glow map. The output is available to
+downstream rendering stages with a call to backdropFX::Manager::getColorBufferGlow().
+- The RenderingEffects node processes its list of effects. The RenderingEffects node
 is always present. When there are no application-specified effects, a no-op effect
 displays color buffer A as a texture-mapped triangle pair.
 
@@ -388,7 +286,7 @@ the dependency.
   \li \bold zlib and libPNG \endbold If CMake fails to find zlib, show advanced options and fill in the
   ZLIB_INCLUDE_DIR and ZLIB_LIBRARY variables. Perform the same step for libPNG if necessary.
   On Windows, this is a two-step process: Configure, set zlib variables, configure again, and
-  set libPNG variables. (In Windows, I have successfully used the zlib and libPNG from
+  set libPNG variables. (On Windows, I have successfully used the zlib and libPNG from
   Mike Wieblen's OSG 3rdparty repo.)
 
   \li \b I tested osgEphemeris backdropFX with an osgEphemeris svn trunk source and build
@@ -457,8 +355,8 @@ backdropFX performance profiling.
 
 \li \b debugShaders Use this flag to dump preprocessed shader source.
 backdropFX supports an INCLUDE preprocessor directive to include the 
-shader source from other files. OpenGL sees only the preprocessed source.
-If the shader generates an error, error message line numbers are given
+shader source from other files. OpenGL sees only the preprocessed source,
+and if the shader generates an error, error message line numbers are given
 for the preprocessed source only. This makes locating the actual line
 number in the unprocessed source very difficult. With the \b debugShaders
 debug flag set, backdropFX writes a preprocessed copy of each shader module

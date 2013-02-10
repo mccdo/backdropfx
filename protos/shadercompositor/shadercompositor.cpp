@@ -153,9 +153,10 @@ main( int argc, char ** argv )
 
     {
         // testing.
-        backdropFX::convertFFPToShaderModules( root.get() );
+        backdropFX::ShaderModuleVisitor smv;
+        root->accept( smv );
 
-        // Don't use the shaders assigned by ShaderModuleVisitor, use our own.
+        // Dont's use the shaders assigned by ShaderModuleVisitor, use our own.
         root->setCullCallback( NULL );
         assignRootShader( root.get() );
 

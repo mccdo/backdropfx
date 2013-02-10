@@ -2,7 +2,7 @@
 
 #include <backdropFX/BackdropCommon.h>
 #include <backdropFX/ShaderModuleUtils.h>
-#include <backdropFX/EffectLibraryUtils.h>
+#include <backdropFX/EffectLibrary.h>
 #include <osgDB/FileUtils>
 #include <osgUtil/CullVisitor>
 #include <osgwTools/Shapes.h>
@@ -29,7 +29,7 @@ unsigned int BackdropCommon::debugVisual   ( 1u <<  4 );
 
 BackdropCommon::BackdropCommon()
   : _clearMode( CLEAR ),
-    _clearColor( osg::Vec4( 0., 0., 0., 1. ) ),
+    _clearColor( osg::Vec4( 0., 0., 0., 0. ) ),
     _clearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ),
     _debugMode( 0 ),
     _frameNumber( 0 )
@@ -69,8 +69,10 @@ BackdropCommon::internalInit()
     // doing the image clear.
     _program = createEffectProgram( "none" );
 
-    _textureUniform = new osg::Uniform( osg::Uniform::SAMPLER_2D, "inputTexture0", 1 );
-    _textureUniform->set( 0 );
+    _textureUniform = new osg::Uniform( osg::Uniform::SAMPLER_2D_ARRAY, "inputTextures", 8 );
+    int values[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    osg::IntArray* intArray = new osg::IntArray( 8, values );
+    _textureUniform->setArray( intArray );
 
     _depth = new osg::Depth( osg::Depth::ALWAYS, 0., 1., true );
 }
@@ -111,11 +113,7 @@ BackdropCommon::performClear( osg::RenderInfo& renderInfo )
 
         state.applyMode( GL_DEPTH_TEST, true );
         state.applyAttribute( _program.get() );
-#if OSG_SUPPORTS_UNIFORM_ID
-        GLint location = state.getUniformLocation( _textureUniform->getNameID() );
-#else
-        GLint location = state.getUniformLocation( _textureUniform->getName() );
-#endif
+        GLint location = state.getUniformLocation( "inputTextures[0]" );
         if( location >= 0 )
             _textureUniform->apply( gl2Ext, location );
         else

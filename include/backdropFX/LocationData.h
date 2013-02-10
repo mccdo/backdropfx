@@ -15,13 +15,9 @@ namespace backdropFX
 {
 
 
-/** \class backdropFX::LocationData LocationData.h backdropFX/LocationData.h
-
-\li Singleton for tracking information about the current viewer
-position and ground orientation. 
-\li Several modules within the rendering 
-system access it. 
-\li Sun position is set internally by SkyDome. */
+/** Singleton for tracking information about the current viewer
+position and ground orientation. Several modules within the rendering 
+system access it. Sun position is set internally by SkyDome. */
 class BACKDROPFX_EXPORT LocationData
 {
 public:
@@ -41,9 +37,6 @@ public:
     static const unsigned int EastUpChanged;
     static const unsigned int DateTimeChanged;
 
-    /** \class backdropFX::LocationData::Callback LocationData.h backdropFX/LocationData.h
-    \brief Executed in response to LocationData changes.
-    */
     class BACKDROPFX_EXPORT Callback : public osg::Referenced
     {
     public:

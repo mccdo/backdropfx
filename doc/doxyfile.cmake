@@ -5,7 +5,7 @@
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = backdropFX
-PROJECT_NUMBER         = "Not yet released - 0.3.0"
+PROJECT_NUMBER         = "Not yet released - 0.1"
 OUTPUT_DIRECTORY       = "${PROJECT_BINARY_DIR}/doc"
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English

@@ -16,11 +16,18 @@ BDFX INCLUDE shaders/gl2/ffp-texture.fs
 
 void main()
 {
+#if 0
+    gl_FragData[ 0 ] = bdfx_outColor;
+#else
     init();
+
+    // Don't call depthPeel; should be a no-op anyway
+    // because bdfx-depthpeel-off.fs should be active.
+    //depthPeel();
 
     // Per pixel lighting
 
-    if( bdfx_texture2dEnable0 > 0 ) // should test all units, but this is faster
+    if( bdfx_texture > 0 )
         computeTexture();
 
     // color sum
@@ -31,7 +38,13 @@ void main()
     //bdfx_processedColor.rgb = bdfx_debugfs.rgb;
     //bdfx_processedColor.a = 1.0;
 
+    // Alpha rejection (alpha test)
+    // Too faint to see?
+    if( bdfx_processedColor.a < 0.005 )
+        discard;
+
     finalize();
+#endif
 }
 
 // END gl2/bdfx-main-nodepthpeel.fs

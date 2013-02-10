@@ -1,11 +1,9 @@
 // Copyright (c) 2010 Skew Matrix Software LLC. All rights reserved.
 
 #include <backdropFX/DepthPeelUtils.h>
-#include <backdropFX/DepthPeelBin.h>
 #include <backdropFX/ShaderModule.h>
 #include <backdropFX/ShaderModuleUtils.h>
 #include <backdropFX/Utils.h>
-#include <osg/AlphaFunc>
 
 
 namespace backdropFX
@@ -15,8 +13,7 @@ namespace backdropFX
 void configureAsDepthPeel( osg::Group* group )
 {
     // Sets required shader modules
-    // Sets blending OFF | OVERRIDE
-    // AlphaFunc passes if alpha > 0.0. Set to ON | OVERRIDE.
+    // Sets blending off | override
     // Specifies default values for depth peel uniforms:
     //  - opaque depth map texture unit
     //  - previous layer depth map texture unit
@@ -33,7 +30,7 @@ void configureAsDepthPeel( osg::Group* group )
     // For depth peeling, use these shaders:
     //   bdfx-main.vs
     //   bdfx-main.fs
-    //   bdfx-depthpeel-on.fs
+    //   bdfx-depthpeel.fs
     osg::ref_ptr< osg::Shader > shader;
     std::string fileName( "shaders/gl2/bdfx-main.vs" );
     __LOAD_SHADER( shader, osg::Shader::VERTEX, fileName );
@@ -45,7 +42,7 @@ void configureAsDepthPeel( osg::Group* group )
     UTIL_MEMORY_CHECK( shader, "DepthPeel bdfx-main.fs",  );
     smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader.get() );
 
-    fileName = "shaders/gl2/bdfx-depthpeel-on.fs";
+    fileName = "shaders/gl2/bdfx-depthpeel.fs";
     __LOAD_SHADER( shader, osg::Shader::FRAGMENT, fileName );
     UTIL_MEMORY_CHECK( shader, "DepthPeel bdfx-depthpeel-on.fs",  );
     smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader.get() );
@@ -55,21 +52,16 @@ void configureAsDepthPeel( osg::Group* group )
     stateSet->setMode( GL_BLEND, osg::StateAttribute::OFF |
         osg::StateAttribute::OVERRIDE );
 
-    osg::AlphaFunc* af = new osg::AlphaFunc( osg::AlphaFunc::GREATER, 0.f );
-    UTIL_MEMORY_CHECK( shader, "DepthPeel AlphaFunc",  );
-    stateSet->setAttributeAndModes( af, osg::StateAttribute::ON |
-        osg::StateAttribute::OVERRIDE );
-
 
     // Default depth peel shader module uniforms
 
     // Texture units for the depth maps.
-    GLuint textureUnit = backdropFX::DepthPeelBin::getTextureUnit();
+    // TBD DepthPeel hardcoded values.
     osg::Uniform* depthMap;
-    depthMap = new osg::Uniform( "bdfx_depthPeelOpaqueDepthMap", (int)( textureUnit ) );
+    depthMap = new osg::Uniform( "bdfx_depthPeelOpaqueDepthMap", (int)( 14 ) );
     UTIL_MEMORY_CHECK( depthMap, "DepthPeel internalInit depthMap uniform",  );
     stateSet->addUniform( depthMap );
-    depthMap = new osg::Uniform( "bdfx_depthPeelPreviousDepthMap", (int)( textureUnit+1 ) );
+    depthMap = new osg::Uniform( "bdfx_depthPeelPreviousDepthMap", (int)( 15 ) );
     UTIL_MEMORY_CHECK( depthMap, "DepthPeel internalInit depthMap uniform",  );
     stateSet->addUniform( depthMap );
 
@@ -84,6 +76,13 @@ void configureAsDepthPeel( osg::Group* group )
         osg::Vec2f( 2.f, 2.f ) );
     UTIL_MEMORY_CHECK( depthOffset, "DepthPeel internalInit depthOffset uniform",  );
     stateSet->addUniform( depthOffset );
+
+    // Depth peel shader module is always available, but bdfx-main.fs
+    // conditionally calls it based on this uniform.
+    osg::Uniform* depthPeelEnable;
+    depthPeelEnable = new osg::Uniform( "bdfx_depthPeelEnable", 1 );
+    UTIL_MEMORY_CHECK( depthPeelEnable, "DepthPeel depthPeelEnable uniform",  );
+    stateSet->addUniform( depthPeelEnable );
 }
 
 void depthPeelEnable( osg::Group* group )
@@ -94,18 +93,11 @@ void depthPeelEnable( osg::Group* group )
     stateSet->setMode( GL_BLEND, osg::StateAttribute::OFF |
         osg::StateAttribute::OVERRIDE );
 
-    stateSet->setMode( GL_ALPHA_TEST, osg::StateAttribute::ON |
-        osg::StateAttribute::OVERRIDE );
-
-
-    backdropFX::ShaderModuleCullCallback* smccb = backdropFX::getOrCreateShaderModuleCullCallback( *group );
-    UTIL_MEMORY_CHECK( smccb, "DepthPeel SMCCB",  );
-
-    osg::ref_ptr< osg::Shader > shader;
-    std::string fileName = "shaders/gl2/bdfx-depthpeel-on.fs";
-    __LOAD_SHADER( shader, osg::Shader::FRAGMENT, fileName );
-    UTIL_MEMORY_CHECK( shader, "DepthPeel bdfx-depthpeel-on.fs",  );
-    smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader.get() );
+    osg::Uniform* depthPeelEnable = stateSet->getUniform( "bdfx_depthPeelEnable" );
+    if( depthPeelEnable != NULL )
+        depthPeelEnable->set( 1 );
+    else
+        osg::notify( osg::WARN ) << "BDFX: depthPeelEnable could not find bdfx_depthPeelEnable uniform." << std::endl;
 }
 void depthPeelDisable( osg::Group* group )
 {
@@ -114,17 +106,11 @@ void depthPeelDisable( osg::Group* group )
 
     stateSet->removeMode( GL_BLEND );
 
-    stateSet->setMode( GL_ALPHA_TEST, osg::StateAttribute::OFF );
-
-
-    backdropFX::ShaderModuleCullCallback* smccb = backdropFX::getOrCreateShaderModuleCullCallback( *group );
-    UTIL_MEMORY_CHECK( smccb, "DepthPeel SMCCB",  );
-
-    osg::ref_ptr< osg::Shader > shader;
-    std::string fileName = "shaders/gl2/bdfx-depthpeel-off.fs";
-    __LOAD_SHADER( shader, osg::Shader::FRAGMENT, fileName );
-    UTIL_MEMORY_CHECK( shader, "DepthPeel bdfx-depthpeel-off.fs",  );
-    smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader.get() );
+    osg::Uniform* depthPeelEnable = stateSet->getUniform( "bdfx_depthPeelEnable" );
+    if( depthPeelEnable != NULL )
+        depthPeelEnable->set( 0 );
+    else
+        osg::notify( osg::WARN ) << "BDFX: depthPeelDisable could not find bdfx_depthPeelEnable uniform." << std::endl;
 }
 
 

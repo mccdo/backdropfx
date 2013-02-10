@@ -5,9 +5,7 @@
 #include <backdropFX/Effect.h>
 #include <backdropFX/EffectLibrary.h>
 #include <backdropFX/EffectLibraryUtils.h>
-#include <backdropFX/ShaderModuleUtils.h>
 #include <osg/Program>
-#include <osgDB/ReadFile>
 #include <backdropFX/Utils.h>
 
 #include <string>
@@ -20,35 +18,58 @@ namespace backdropFX
 {
 
 
-osg::Program*
-createEffectProgram( const std::string& baseName )
+bool
+configureGlowEffect( const bool enable )
 {
-    std::string fileName;
-    const std::string namePrefix( "shaders/effects/" );
+    backdropFX::Manager& mgr = *( backdropFX::Manager::instance() );
+    backdropFX::RenderingEffects& renderFX = mgr.getRenderingEffects();
+    EffectVector& ev = renderFX.getEffectVector();
+    osg::Camera& glowCamera = mgr.getGlowCamera();
 
+    if( !enable )
     {
-        std::ostringstream ostr;
-        ostr << namePrefix << baseName << std::string( ".vs" );
-        fileName = std::string( ostr.str() );
+        // Disable the glow effect.
+
+        bool deleted = renderFX.removeEffect(  "EffectGlow" );
+        if( !deleted )
+        {
+            osg::notify( osg::WARN ) << "backdropFX: EffectLibraryUtils: EffectGlow not found." << std::endl;
+            return( false );
+        }
+
+        // Disable the glow camera.
+        // TBD In the future, the glow camera might also be generating the
+        // DOF depth map, so we might not want to disable it.
+        glowCamera.setNodeMask( 0 );
+    }
+    else
+    {
+        // Enable the glow effect.
+
+        Effect* glowEffect = renderFX.getEffect( "EffectGlow" );
+        if( glowEffect != NULL )
+        {
+            osg::notify( osg::WARN ) << "backdropFX: EffectLibraryUtils: EffectGlow already enabled." << std::endl;
+            return( false );
+        }
+
+        glowCamera.setNodeMask( 0xffffffff );
+
+        // Create and add the glow effect.
+        EffectGlow* glow = new EffectGlow;
+        UTIL_MEMORY_CHECK( glow, "EffectLibraryUtil adding EffectGlow", false )
+        glow->setName( "EffectGlow" );
+        glow->addInput( 0, mgr.getColorBufferA() );
+        glow->addInput( 1, mgr.getColorBufferGlow() );
+        glow->setProgram( createEffectProgram( "glow1" ) );
+
+        // TBD Need to be a litle smarter about the order of things,
+        // once we start having more complex effect groupings.
+        ev.push_back( glow );
     }
 
-    osg::ref_ptr< osg::Shader > vertShader;
-    __LOAD_SHADER( vertShader, osg::Shader::VERTEX, fileName );
-
-    {
-        std::ostringstream ostr;
-        ostr << namePrefix << baseName << std::string( ".fs" );
-        fileName = std::string( ostr.str() );
-    }
-
-    osg::ref_ptr< osg::Shader > fragShader;
-    __LOAD_SHADER( fragShader, osg::Shader::FRAGMENT, fileName );
-
-    osg::ref_ptr< osg::Program > program = new osg::Program();
-    program->setName( "Effect " + baseName );
-    program->addShader( vertShader.get() );
-    program->addShader( fragShader.get() );
-    return( program.release() );
+    // Return true to indicate success.
+    return( true );
 }
 
 

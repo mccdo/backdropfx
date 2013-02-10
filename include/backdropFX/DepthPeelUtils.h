@@ -15,12 +15,6 @@ namespace backdropFX
 {
 
 
-/** \defgroup DepthPeelUtils Utilities for Working with Depth Peeling and Transparency. */
-/*@{*/
-
-/** This function adds uniform
-variables necessary to support BlendColor-like transparency without
-GL2 predefined uniforms. */
 template< class T >
 bool transparentEnable( T* nodeOrDrawable, float alpha )
 {
@@ -35,8 +29,6 @@ bool transparentEnable( T* nodeOrDrawable, float alpha )
     return( success );
 }
 
-/** This function removes uniforms used to implement BlendColor
-transparency without GL2 predefined uniforms. */
 template< class T >
 bool transparentDisable( T* nodeOrDrawable, bool recursive=false )
 {
@@ -55,35 +47,10 @@ bool transparentDisable( T* nodeOrDrawable, bool recursive=false )
     return( success );
 }
 
-/** Configure an arbitrary node for depth peeling. To do this, the function
-sets the following states and shaders:
-
-Add the required shader modules for depth peeling to the ShaderModuleCullCallback.
-
-These modules are:
-
-\li bdfx-main.vs
-\li bdfx-main.fs
-\li bdfx-depthpeel.fs
-
-Disable blending by setting the mode to OFF | OVERRIDE.
-
-Set AlphaFunc to pass with the OVERRIDE bit if alpha > 0.0.
-
-The following uniforms and default values are:
-
-\li Ppaque depth map texture unit
-\li Previous layer depth map texture unit
-\li Depth offset values
-\li Depth peeling enable flag
-*/
 BACKDROPFX_EXPORT void configureAsDepthPeel( osg::Group* group );
 
-/** Toggle depth peeling on a group node that is configured for depth peeling. */
 BACKDROPFX_EXPORT void depthPeelEnable( osg::Group* group );
 BACKDROPFX_EXPORT void depthPeelDisable( osg::Group* group );
-
-/*@}*/
 
 
 // backdropFX

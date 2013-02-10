@@ -5,7 +5,6 @@ BDFX INCLUDE shaders/gl2/ffp-declarations.common
 BDFX INCLUDE shaders/gl2/ffp-declarations.fs
 BDFX INCLUDE shaders/gl2/ffp-declarations-fog.common
 BDFX INCLUDE shaders/gl2/ffp-declarations-fog.fs
-BDFX INCLUDE shaders/gl2/bdfx-depthpeel-declarations.fs
 
 // Copyright (c) 2010 Skew Matrix Software. All rights reserved.
 // gl2/bdfx-main.fs
@@ -14,25 +13,24 @@ void main()
 {
     init();
 
+    depthPeel();
+
     // Per pixel lighting
 
     computeTexture();
 
     // color sum
-
-    // Do not allow fog to affect streamline alpha.
-    float saveAlpha = bdfx_processedColor.a;
+    // fog
     computeFogFragment();
-    bdfx_processedColor.a = saveAlpha;
-
-    // This code should be _after_ the above fragment processing.
-    // Depth peeling changes bdfx_processedColor.a, and we want this
-    // done after things like texture mapping and fog.
-    depthPeel();
 
     // Debug
-    //bdfx_processedColor.rgb = bdfx_debugfs.rgb;
+    //dfx_processedColor.rgb = bdfx_debugfs.rgb;
     //bdfx_processedColor.a = 1.0;
+
+    // Alpha rejection (alpha test)
+    // Too faint to see?
+    if( bdfx_processedColor.a < 0.005 )
+        discard;
 
     finalize();
 }

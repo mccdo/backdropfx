@@ -11,7 +11,6 @@
 
 #include <backdropFX/Utils.h>
 #include <string>
-#include <osg/io_utils>
 
 
 
@@ -48,8 +47,6 @@ RenderingEffectsStage::~RenderingEffectsStage()
 void
 RenderingEffectsStage::internalInit()
 {
-    _texturePercentUniform = new osg::Uniform( "texturePercent", osg::Vec2f( 1.f, 1.f ) );
-    UTIL_MEMORY_CHECK( _texturePercentUniform, "RenderingEffectsStage Texture Percent Uniform",  );
 }
 
 
@@ -73,18 +70,6 @@ RenderingEffectsStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& 
         return;
     }
 
-    const osg::Viewport* vp = getViewport();
-    state.applyAttribute( vp );
-
-    // Compute the percentage of the texture we will render to.
-    // This is the viewport width and height divided by the texture
-    // width and height. It's used to ensure we display the appropriate
-    // portion of the texture during drawFSTP().
-    unsigned int texW, texH;
-    _renderingEffects->getTextureWidthHeight( texW, texH );
-    osg::Vec2f texturePercent( vp->width() / (float)( texW ),
-        vp->height() / (float)( texH ) );
-    _texturePercentUniform->set( texturePercent );
 
     EffectVector effectVector = _renderingEffects->getEffectVector();
     if( effectVector.empty() )
@@ -92,7 +77,7 @@ RenderingEffectsStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& 
         Effect* defaultEffect = _renderingEffects->getDefaultEffect();
         if( defaultEffect != NULL )
         {
-            defaultEffect->draw( this, renderInfo, true );
+            defaultEffect->draw( this, renderInfo );
         }
 
         else
@@ -124,14 +109,9 @@ RenderingEffectsStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& 
         // Iterate over and render all effects in the EffectVector.
         EffectVector::iterator itr;
         for( itr=effectVector.begin(); itr != effectVector.end(); itr++ )
-            (*itr)->draw( this, renderInfo, (*itr) == effectVector.back() );
+            (*itr)->draw( this, renderInfo );
     }
 
-
-    // If RFX FBO was set, then we rendered to an FBO. App will now want to
-    // render to window (presumably) so unbind the FBO.
-    if( _renderingEffects->getFBO() != NULL )
-        osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, 0);
 
     if( state.getCheckForGLErrors() != osg::State::NEVER_CHECK_GL_ERRORS )
     {
@@ -145,12 +125,6 @@ void
 RenderingEffectsStage::setRenderingEffects( RenderingEffects* renderingEffects )
 {
     _renderingEffects = renderingEffects;
-}
-
-osg::Uniform*
-RenderingEffectsStage::getTexturePercentUniform()
-{
-    return( _texturePercentUniform.get() );
 }
 
 

@@ -8,9 +8,9 @@
 #include <osg/MatrixTransform>
 #include <osg/Geometry>
 #include <osg/Uniform>
-#include <osg/BlendFunc>
 #include <osg/PointSprite>
 #include <osg/Texture2D>
+#include <osg/AlphaFunc>
 #include <osg/Depth>
 
 #include <backdropFX/ShaderModule.h>
@@ -149,8 +149,6 @@ DefaultScene::streamlineStateSet( osg::Texture2D* texPos, int m, int n )
 
     ss->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
 
-    ss->setAttributeAndModes( new osg::BlendFunc() );
-
     // Specify the splotch texture.
     osg::Texture2D *tex = new osg::Texture2D();
     tex->setImage( osgDB::readImageFile( "splotch.png" ) );
@@ -217,21 +215,18 @@ DefaultScene::streamlineShader( osg::Group* grp )
 
     osg::Shader* shader = new osg::Shader( osg::Shader::VERTEX );
     std::string fileName = std::string( "shaders/gl2/streamline-transform.vs" );
-    shader->setName( osgDB::getSimpleFileName( fileName ) );
     shader->loadShaderSourceFromFile( osgDB::findDataFile( fileName ) );
     backdropFX::shaderPreProcess( shader );
     smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader );
 
     shader = new osg::Shader( osg::Shader::FRAGMENT );
     fileName = std::string( "shaders/gl2/streamline-texture.fs" );
-    shader->setName( osgDB::getSimpleFileName( fileName ) );
     shader->loadShaderSourceFromFile( osgDB::findDataFile( fileName ) );
     backdropFX::shaderPreProcess( shader );
     smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader );
 
     shader = new osg::Shader( osg::Shader::FRAGMENT );
     fileName = std::string( "shaders/gl2/streamline-main.fs" );
-    shader->setName( osgDB::getSimpleFileName( fileName ) );
     shader->loadShaderSourceFromFile( osgDB::findDataFile( fileName ) );
     backdropFX::shaderPreProcess( shader );
     smccb->setShader( backdropFX::getShaderSemantic( fileName ), shader );
@@ -291,6 +286,9 @@ DefaultScene::operator()( osg::Node* node )
 
 #if 0
     osg::Node* teapot = osgDB::readNodeFile( "teapot.osg.(-5,0,0).trans" );
+    // TBD OSG doesn't draw the teapots when the eye gets
+    // close, need to investigate why.
+    teapot->setCullingActive( false );
     osg::Group* teapotParent = new osg::Group;
     teapotParent->addChild( teapot );
     grp->addChild( teapotParent );
@@ -302,7 +300,7 @@ DefaultScene::operator()( osg::Node* node )
 #endif
 
     osg::Geode* geode = new osg::Geode;
-    osg::Vec3 size( 18., 18., 5. );
+    osg::Vec3 size( 7., 7., 3.5 );
     geode->addDrawable( osgwTools::makePlane(
         osg::Vec3( -size.x(), -size.y(), -size.z() ),
         osg::Vec3( size.x() * 2., 0., 0. ), osg::Vec3( 0., size.x() * 2., 0. ),
@@ -319,6 +317,10 @@ DefaultScene::internalDefaultScene()
     grp->setName( "DefaultScene root" );
 
     osg::Node* teapot = osgDB::readNodeFile( "teapot.osg" );
+
+    // TBD OSG doesn't draw the teapots when the eye gets
+    // close, need to investigate why.
+    teapot->setCullingActive( false );
 
 #ifdef SUPER_SIMPLE
     osg::MatrixTransform* mt;
@@ -394,7 +396,7 @@ DefaultScene::internalDefaultScene()
 
     texPos = streamlinePositionData( loc, m, n, bound );
     geom = makeStreamline( radius, bound, m*n, color );
-    geom->setStateSet( streamlineStateSet( texPos.get(), m, n ) );
+    geom->setStateSet( streamlineStateSet( texPos, m, n ) );
     geode->addDrawable( geom.get() );
 
     loc = osg::Vec3( 0.25, -0.5, 0.1 );
@@ -402,7 +404,7 @@ DefaultScene::internalDefaultScene()
 
     texPos = streamlinePositionData( loc, m, n, bound );
     geom = makeStreamline( radius, bound, m*n, color );
-    geom->setStateSet( streamlineStateSet( texPos.get(), m, n ) );
+    geom->setStateSet( streamlineStateSet( texPos, m, n ) );
     geode->addDrawable( geom.get() );
 #endif
 

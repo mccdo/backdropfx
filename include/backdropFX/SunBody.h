@@ -15,12 +15,12 @@ This is a custom Geometry class. The backdropFX system adds it as a
 Drawable beneath the SkyDome custom Group node.
 
 BackdropFX draws the Sun and Moon at the same distance from the viewer,
-so you don't use the Sun's actual radius but instead the Moon radius,
+so we don't use the Sun's actual radius but instead use the Moon radius,
 because the Sun and Moon have the same apparent diameter when you view them from
 the Earth. However, you can change the Sun radius in the constructor, and
 there is also support for a scale factor in setScale.
 
-The Sun renders as a geodesic sphere. setSubdivisions controls sphere
+The Sun renders as a geodesic sphere. setSubdivisions controls the sphere
 approximation. 0 subdivisions renders 20 triangles. Each successive increase in
 subdivisions increases the approximation by a factor of 4.
 */
@@ -40,7 +40,7 @@ public:
 
     /** Scale factor for the Sun sphere. Default is 1.0, but some
     users might prefer larger values depending on the 
-    matrix field-of-view projection.
+    matrix field of view projection.
     */
     void setScale( float scale );
     float getScale() const;

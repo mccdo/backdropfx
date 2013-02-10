@@ -1,5 +1,3 @@
-//#version 120
-//#extension GL_ARB_draw_instanced : require
 
 BDFX INCLUDE shaders/gl2/bdfx-declarations.common
 BDFX INCLUDE shaders/gl2/ffp-declarations.common
@@ -54,10 +52,10 @@ void computeTransform()
     // Pass texture coords of tri pair to fragment processing.
     // TBD do we _know_ we need to use bdfx_multiTexCoord1? Can we make this
     // more flexible for the client app?
-    bdfx_outTexCoord1 = bdfx_multiTexCoord1;
+    bdfx_outTexCoord[ bdfx_streamlineImageUnit ] = bdfx_multiTexCoord1;
 
     // Using the instance ID, generate "texture coords" for this instance.
-    float fInstanceID = float( gl_InstanceID );
+    float fInstanceID = gl_InstanceID;
     float r = fInstanceID / streamline.sizes.x;
     vec2 tC;
     tC.s = fract( r ); tC.t = floor( r ) / streamline.sizes.y;
@@ -75,10 +73,13 @@ void computeTransform()
     vec4 cc = bdfx_projection * bdfx_modelViewMatrix * modelPos;
     gl_Position = cc;
 
+    // Depth peel
+    bdfx_depthTC = cc;
+
 
 
     // Compute the length of a trace segment, in points.
-    float segLength = float( streamline.totalInstances ) / float( streamline.numTraces );
+    float segLength = streamline.totalInstances / streamline.numTraces;
     // Use current time to compute an offset in points for the animation.
     float time = mod( osg_SimulationTime, streamline.traceInterval );
     float pointOffset = ( time / streamline.traceInterval ) * segLength;
@@ -90,7 +91,7 @@ void computeTransform()
 
 #if 1
     // Use smoothstep to fade from the head to the traceLength.
-    float alpha = smoothstep( segHead - float( streamline.traceLength ), segHead, fInstanceID );
+    float alpha = smoothstep( segHead - streamline.traceLength, segHead, fInstanceID );
 #else
     // Alternative: Use step() instead for no fade.
     float alpha = step( segHead - streamline.traceLength, fInstanceID );

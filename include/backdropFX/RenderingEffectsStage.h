@@ -45,27 +45,12 @@ public:
     void setRenderingEffects( RenderingEffects* renderingEffects );
     RenderingEffects* getRenderingEffects() const { return( _renderingEffects ); }
 
-    /** Set the current texture width and height. RenderingEffects calls this
-    each frame during cull.
-    */
-    void setTextureWidthHeight( const osg::Vec2f& widthHeight );
-
-    /** Returns a uniform that contains the visible percentage of internal textures.
-    This is used by Effect shader code to set the upper right corner texture coordinate
-    values. See DepthPeelBin.cpp/.h, which uses an identical mechanism for rendering
-    its internal textures. Effects obtain this uniform at draw time and bind it to
-    an Effect-specific program location (depending on the Effect shader).
-    */
-    osg::Uniform* getTexturePercentUniform();
-
 
 protected:
     ~RenderingEffectsStage();
     void internalInit();
 
     RenderingEffects* _renderingEffects;
-
-    osg::ref_ptr< osg::Uniform > _texturePercentUniform;
 };
 
 

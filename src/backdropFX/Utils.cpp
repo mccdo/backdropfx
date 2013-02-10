@@ -8,20 +8,6 @@
 #include <osgwTools/Version.h>
 #include <string>
 
-// Workaround for RHEL/CentOS 5 and similar distros
-// that define GL_EXT_framebuffer_multisample but not
-// GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_EXT
-#ifndef GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_EXT
-#define GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE_EXT 0x8D56
-#endif
-
-#include <png.h>
-//http://stackoverflow.com/questions/2442335/libpng-boostgil-png-infopp-null-not-found
-#if PNG_LIBPNG_VER > 10210
-#define png_infopp_NULL (png_infopp)NULL
-#define int_p_NULL (int*)NULL
-#endif
-
 #include <boost/gil/image.hpp>
 #include <boost/gil/typedefs.hpp>
 #include <boost/gil/extension/io/png_io.hpp>
@@ -212,14 +198,6 @@ debugDumpDepthImage( const std::string& fileName, const short* pixels, const int
     // Create a view flipped in y, and write as PNG.
     boost::gil::png_write_view< boost::gil::gray16_view_t >(
         fileName, boost::gil::flipped_up_down_view( iv ) );
-}
-
-
-std::string elementName( const std::string& prefix, int element, const std::string& suffix )
-{
-    std::ostringstream ostr;
-    ostr << prefix << element << suffix;
-    return( ostr.str() );
 }
 
 

@@ -23,7 +23,6 @@
 #include <osg/Depth>
 #include <osg/BlendFunc>
 #include <osg/CullFace>
-#include <osg/AlphaFunc>
 #include <osg/TextureCubeMap>
 
 #include <backdropFX/Utils.h>
@@ -36,15 +35,12 @@ namespace backdropFX
 {
 
 
-// There is *always* a SkyDomeUpdateCB attached
-// to the SkyDome node.
 class SkyDomeUpdateCB : public osg::NodeCallback
 {
 public:
     SkyDomeUpdateCB( SkyDome* sd )
       : NodeCallback(),
-        _sd( sd ),
-        _simTime( 0 )
+        _sd( sd )
     {}
 
     virtual void operator()( osg::Node* node, osg::NodeVisitor* nv )
@@ -60,51 +56,11 @@ public:
             _sd->_dirty = 0;
         }
 
-        float scale;
-        if( _sd->getAutoAdvanceTime( scale ) )
-        {
-            double currentTime = nv->getFrameStamp()->getSimulationTime();
-            double elapsed = currentTime - _simTime;
-            if( elapsed * scale > 1.0 )
-            {
-                int elapsedInt = (int)( elapsed * scale );
-                _simTime += (double) elapsed;
-
-                osgEphemeris::DateTime dateTime = backdropFX::LocationData::s_instance()->getDateTime();
-                int sec = dateTime.getSecond() + elapsedInt;
-                if( sec > 59 )
-                {
-                    int incMinutes = sec / 60;
-                    sec = sec % 60;
-                    int minute = dateTime.getMinute() + incMinutes;
-                    if( minute > 59 )
-                    {
-                        int incHours = minute / 60;
-                        minute = minute % 60;
-                        int hour = dateTime.getHour() + incHours;
-
-                        if( hour > 24 )
-                        {
-                            hour -= 24;
-                            int day = dateTime.getDayOfMonth() + 1;
-                            dateTime.setDayOfMonth( day );
-                        }
-                        dateTime.setHour( hour );
-                    }
-                    dateTime.setMinute( minute );
-                }
-                dateTime.setSecond( sec );
-                backdropFX::LocationData::s_instance()->setDateTime( dateTime );
-            }
-        }
-
         traverse( node, nv );
     }
 
 protected:
     SkyDome* _sd;
-
-    double _simTime;
 };
 
 
@@ -202,9 +158,7 @@ const unsigned int SkyDome::AllDirty( 0xffffffff );
 
 
 SkyDome::SkyDome()
-  : _timeAdvance( false ),
-    _timeAdvanceScale( 1.f ),
-    _dirty( AllDirty ),
+  : _dirty( AllDirty ),
     _radius( 384403.f ),
     _sunScale( 1.f ),
     _sunSub( 1 ),
@@ -227,8 +181,6 @@ SkyDome::SkyDome()
 SkyDome::SkyDome( const SkyDome& skydome, const osg::CopyOp& copyop )
   : osg::Group( skydome, copyop ),
     backdropFX::BackdropCommon( skydome, copyop ),
-    _timeAdvance( skydome._timeAdvance ),
-    _timeAdvanceScale( skydome._timeAdvanceScale ),
     _dirty( skydome._dirty ),
     _radius( skydome._radius ),
     _sunScale( skydome._sunScale ),
@@ -245,27 +197,6 @@ SkyDome::~SkyDome()
 {
 }
 
-
-void SkyDome::setAutoAdvanceTime( bool advance, float scale )
-{
-    if( scale < 0.f )
-    {
-        osg::notify( osg::WARN ) << "backdropFX: SkyDome: Negative time advance is not supported." << std::endl;
-        return;
-    }
-
-    _timeAdvance = advance;
-    _timeAdvanceScale = scale;
-}
-bool SkyDome::getAutoAdvanceTime() const
-{
-    return( _timeAdvance );
-}
-bool SkyDome::getAutoAdvanceTime( float& scale ) const
-{
-    scale = _timeAdvanceScale;
-    return( _timeAdvance );
-}
 
 void
 SkyDome::setRadius( float radius )
@@ -392,10 +323,6 @@ SkyDome::rebuild()
         UTIL_MEMORY_CHECK( cf.get(), "SkyDome CullFace", );
         ss->setAttributeAndModes( cf.get(), osg::StateAttribute::OFF |
             osg::StateAttribute::PROTECTED );
-
-        osg::ref_ptr< osg::AlphaFunc > af( new osg::AlphaFunc( osg::AlphaFunc::GREATER, 0.f ) );
-        UTIL_MEMORY_CHECK( af.get(), "SkyDome AlphaFunc", );
-        ss->setAttributeAndModes( af.get() );
 
         osg::ref_ptr< osg::Shader > vertShader( osg::Shader::readShaderFile(
             osg::Shader::VERTEX, osgDB::findDataFile( "shaders/skydome.vs" ) ) );
@@ -833,9 +760,6 @@ SkyDome::traverse( osg::NodeVisitor& nv )
         sds->reset();
     }
     sds->setEnable( getEnable() );
-
-    sds->setViewport( cv->getCurrentCamera()->getViewport() );
-    sds->setCamera( camera );
 
     // PSC TBD. I don't think we need this.
     //sds->setInheritedPositionalStateContainer( previousStage->getPositionalStateContainer() );

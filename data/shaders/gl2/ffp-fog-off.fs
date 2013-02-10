@@ -8,7 +8,7 @@ BDFX INCLUDE shaders/gl2/ffp-declarations-fog.fs
 
 void computeFogFragment()
 {
-    return;
+return;
 } // computeFogFragment
 
 // END gl2/ffp-fog-off.fs

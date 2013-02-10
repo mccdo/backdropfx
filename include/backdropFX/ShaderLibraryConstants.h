@@ -24,7 +24,7 @@ This value doesn't prevent a shader from sampling more/greater units.
 tex gen enable, eye planes, and object planes.
 
 <b>Shader uniform:</b> \c bdfx_maxTextureCoords */
-#define BDFX_MAX_TEXTURE_COORDS 4
+#define BDFX_MAX_TEXTURE_COORDS 8
 
 /** Used to size the arrays for clip planes and clip plane
 enables.
@@ -46,11 +46,6 @@ unit to obtain texels for rendering each streamline point sprite.
 <b>Shader uniform:</b> \c bdfx_streamlineImageUnit */
 #define BDFX_STREAMLINE_IMAGE_UNIT 7
 
-
-/** Reserved texture units, counting backwards starting from 13.
-GeForce 8800 OS X has max units of 16 (0 through 15), and depth
-peeling already uses units 14 and 15. */
-#define BDFX_TEX_UNIT_SHADOW_MAP 13
 
 
 /*@}*/

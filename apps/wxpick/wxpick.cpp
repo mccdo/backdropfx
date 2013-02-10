@@ -37,7 +37,6 @@
 #include <backdropFX/RenderingEffects.h>
 #include <backdropFX/EffectLibraryUtils.h>
 #include <backdropFX/ShaderModuleVisitor.h>
-#include <backdropFX/ShaderModuleUtils.h>
 #include <backdropFX/LocationData.h>
 
 #include <iostream>
@@ -71,9 +70,12 @@ backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height )
     //
     // Initialize the backdropFX Manager.
     backdropFX::Manager::instance()->setSceneData( root );
-    backdropFX::Manager::instance()->rebuild(
-        backdropFX::Manager::skyDome | backdropFX::Manager::depthPeel
-        );
+    backdropFX::Manager::instance()->rebuild();
+
+    // TBD don't RTT yet. Get this working in a window first.
+    // backdropFX::Manager::instance()->setFBO( createDestinationFBO() );
+    // TBD When we do RTT, it is app responsibility to splat an fstp to display the output image.
+    //   TBD Maybe backdropFX should contain a convenience mechanism for this.
 
     // With a reasonably large FOV in the window, the sun and moon typically
     // appear too small. Scale them up to make them more visible.
@@ -81,14 +83,12 @@ backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height )
     sd.setSunScale( 2. );
     sd.setMoonScale( 2. );
 
-
     // For performance.
     backdropFX::DepthPartition& dPart = backdropFX::Manager::instance()->getDepthPartition();
     dPart.setNumPartitions( 1 );
 
     // Enable glow (by default, RenderingEffects does nothing).
-    backdropFX::RenderingEffects& rfx = backdropFX::Manager::instance()->getRenderingEffects();
-    rfx.setEffectSet( backdropFX::RenderingEffects::effectGlow );
+    backdropFX::configureGlowEffect( true );
 
     // Must always explicitly set the width and height of the rendered area.
     backdropFX::Manager::instance()->setTextureWidthHeight( width, height );
@@ -197,13 +197,18 @@ bool wxOsgApp::OnInit()
     if( loadedModels.valid() )
         root->addChild( loadedModels.get() );
 
+    // Disable GL_LIGHT0, leaving only the Sun enabled. This is kind of a hack,
+    // as we currently can't disable this on the root node, have to disable it on
+    // a child node.
+    loadedModels->getOrCreateStateSet()->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
+
     // Convert loaded data to use shader composition.
     {
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( false ); // Use bdfx-main
         smv.setAttachTransform( false ); // Use bdfx-transform
         smv.setSupportSunLighting( true ); // Use shaders that light from the Sun
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        root->accept( smv );
     }
 
     backdropFXSetUp( root.get(), width, height );
