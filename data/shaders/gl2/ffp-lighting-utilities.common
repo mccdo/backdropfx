@@ -44,8 +44,7 @@ vec4 internalSpecular( in vec3 pli, in vec4 Slight )
     vec3 color = vec3( 0., 0., 0. );
     if( specularDot > 0.01 )
     {
-        float shininess = bdfx_frontBackShininess[ 0 ]; // TBD need to support front/back in future.
-        color = ( pow( specularDot, shininess ) *
+        color = ( pow( specularDot, bdfx_frontMaterial.shininess ) *
             bdfx_frontMaterial.specular.rgb * Slight.rgb );
     }
     return( vec4( color, 0. ) );

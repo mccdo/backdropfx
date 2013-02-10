@@ -20,15 +20,17 @@ void main()
 
     // color sum
 
-    // Do not allow fog to affect streamline alpha.
-    float saveAlpha = bdfx_processedColor.a;
     computeFogFragment();
-    bdfx_processedColor.a = saveAlpha;
 
     // This code should be _after_ the above fragment processing.
     // Depth peeling changes bdfx_processedColor.a, and we want this
     // done after things like texture mapping and fog.
-    depthPeel();
+    if( bdfx_depthPeelEnable == 1 )
+    {
+        // In addition to testing against the depth maps, this function
+        // also sets the alpha value (bdfx_processedColod.a).
+        depthPeel();
+    }
 
     // Debug
     //bdfx_processedColor.rgb = bdfx_debugfs.rgb;

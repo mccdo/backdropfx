@@ -128,11 +128,6 @@ RenderingEffectsStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& 
     }
 
 
-    // If RFX FBO was set, then we rendered to an FBO. App will now want to
-    // render to window (presumably) so unbind the FBO.
-    if( _renderingEffects->getFBO() != NULL )
-        osgwTools::glBindFramebuffer( fboExt, GL_FRAMEBUFFER_EXT, 0);
-
     if( state.getCheckForGLErrors() != osg::State::NEVER_CHECK_GL_ERRORS )
     {
         std::string msg( "at RFXS draw end" );

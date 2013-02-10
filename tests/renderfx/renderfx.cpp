@@ -64,26 +64,21 @@ class EffectHandler : public osgGA::GUIEventHandler
 public:
     EffectHandler()
       : _glow( false ),
-        _dof( false ),
-        _heat( false )
+        _dof( false )
     {}
     ~EffectHandler() {}
 
     void usage()
     {
-        osg::notify( osg::NOTICE ) << "  b\tAdd blur effect." << std::endl;
-        osg::notify( osg::NOTICE ) << "  c\tAdd combine effect." << std::endl;
+        osg::notify( osg::NOTICE ) << "  b\tToggle blur effect." << std::endl;
+        osg::notify( osg::NOTICE ) << "  c\tToggle combine effect." << std::endl;
         osg::notify( osg::NOTICE ) << "  g\tToggle glow effect." << std::endl;
-        osg::notify( osg::NOTICE ) << "  d\tToggle depth of field." << std::endl;
-        osg::notify( osg::NOTICE ) << "  h\tToggle heat distortion." << std::endl;
-        osg::notify( osg::NOTICE ) << "  F1\tDecrease focal distance." << std::endl;
-        osg::notify( osg::NOTICE ) << "  F2\tIncrease focal distance." << std::endl;
-        osg::notify( osg::NOTICE ) << "  Del\tClear effects vector." << std::endl;
     }
 
     virtual bool handle( const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa )
     {
         backdropFX::Manager* mgr = backdropFX::Manager::instance();
+        osg::Camera& glowCam = mgr->getGlowCamera();
         backdropFX::RenderingEffects& rfx = mgr->getRenderingEffects();
         backdropFX::EffectVector& ev = rfx.getEffectVector();
 
@@ -142,58 +137,21 @@ public:
             case 'g': // glow
             {
                 _glow = !_glow;
-                const unsigned int bit = backdropFX::RenderingEffects::effectGlow;
-                unsigned int fxset = rfx.getEffectSet();
-                rfx.setEffectSet( _glow ? ( fxset | bit ) : ( fxset & ~bit ) );
+                backdropFX::configureGlowEffect( _glow );
                 handled = true;
                 break;
             }
             case 'd': // DOF
             {
                 _dof = !_dof;
-                const unsigned int bit = backdropFX::RenderingEffects::effectDOF;
-                unsigned int fxset = rfx.getEffectSet();
-                rfx.setEffectSet( _dof ? ( fxset | bit ) : ( fxset & ~bit ) );
+                backdropFX::configureDOFEffect( _dof );
                 handled = true;
-                break;
-            }
-            case 'h': // heat distortion
-            {
-                _heat = !_heat;
-                const unsigned int bit = backdropFX::RenderingEffects::effectHeatDistortion;
-                unsigned int fxset = rfx.getEffectSet();
-                rfx.setEffectSet( _heat ? ( fxset | bit ) : ( fxset & ~bit ) );
-                handled = true;
-                break;
-            }
-            case osgGA::GUIEventAdapter::KEY_F1: // reduce DOF distance
-            {
-                backdropFX::Effect* effect;
-                if( ( effect = backdropFX::getEffect( "EffectDOF", rfx.getEffectVector() ) ) != NULL )
-                {
-                    backdropFX::EffectDOF* dof = static_cast< backdropFX::EffectDOF* >( effect );
-                    dof->setFocalDistance( dof->getFocalDistance() * 1./1.1 );
-                    handled = true;
-                }
-                break;
-            }
-            case osgGA::GUIEventAdapter::KEY_F2: // increase DOF distance
-            {
-                backdropFX::Effect* effect;
-                if( ( effect = backdropFX::getEffect( "EffectDOF", rfx.getEffectVector() ) ) != NULL )
-                {
-                    backdropFX::EffectDOF* dof = static_cast< backdropFX::EffectDOF* >( effect );
-                    dof->setFocalDistance( dof->getFocalDistance() * 1.1 );
-                    handled = true;
-                }
                 break;
             }
             case osgGA::GUIEventAdapter::KEY_Delete: // delete, clear all effects
             {
                 _glow = false;
                 _dof = false;
-                _heat = false;
-                rfx.setEffectSet( 0 );
                 ev.clear();
                 handled = true;
                 break;
@@ -205,7 +163,7 @@ public:
     }
 
 protected:
-    bool _glow, _dof, _heat;
+    bool _glow, _dof;
 };
 /** \endcond */
 
@@ -242,7 +200,7 @@ public:
 
             const double aspect = (double) width / (double) height;
             _viewer.getCamera()->setProjectionMatrix( createProjection( aspect ) );
-            _viewer.getCamera()->getViewport()->setViewport( 0, 0, width, height );
+            _viewer.getCamera()->setViewport( new osg::Viewport( 0, 0, width, height ) );
 
             if( ( width > _maxWidth ) || ( height > _maxHeight ) )
             {
@@ -267,12 +225,6 @@ protected:
 void
 backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height )
 {
-    // TBD remove when bdfx correctly positions the Sun light.
-    osg::ref_ptr< osg::Light > light = new osg::Light;
-    light->setLightNum( 0 );
-    light->setPosition( osg::Vec4( 30., -30.0, 30.0, 1.0 ) );
-    backdropFX::Manager::instance()->setLight( light.get() );
-
     //
     // Initialize the backdropFX Manager.
     backdropFX::Manager::instance()->setSceneData( root );
@@ -328,7 +280,7 @@ void addGlowState( osg::Node* node )
     smccb->setShader( backdropFX::getShaderSemantic( shaderName ), shader );
 
     osg::StateSet* ss = node->getOrCreateStateSet();
-    osg::Vec4f glowColor( 0., 0.4, 1., 1. ); // cyan / turquise
+    osg::Vec4f glowColor( .5, .4, 0., 1. ); // yellow-ish
     osg::Uniform* glow = new osg::Uniform( "bdfx_glowColor", glowColor );
     ss->addUniform( glow );
 }
@@ -348,12 +300,18 @@ main( int argc, char ** argv )
     addGlowState( modelParent );
     root->addChild( modelParent );
 
+    // Disable GL_LIGHT0, leaving only the Sun enabled. This is kind of a hack,
+    // as we currently can't disable this on the root node, have to disable it on
+    // a child node.
+    modelParent->getOrCreateStateSet()->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
+
     // Convert loaded data to use shader composition.
     {
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( false ); // Use bdfx-main
         smv.setAttachTransform( false ); // Use bdfx-transform
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        smv.setSupportSunLighting( true ); // Use shaders that support Sun lighting.
+        root->accept( smv );
     }
 
     unsigned int width( 800 ), height( 600 );

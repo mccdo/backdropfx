@@ -32,4 +32,3 @@ INSTALL(
     DESTINATION ${INSTALL_INCDIR}/${LIB_NAME}
     COMPONENT libosgworks-dev
 )
-

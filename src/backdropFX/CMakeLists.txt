@@ -2,7 +2,6 @@ SET( LIB_NAME backdropFX )
 
 ADD_DEFINITIONS( -DBACKDROPFX_LIBRARY )
 SET( HEADER_PATH ${PROJECT_SOURCE_DIR}/include/${LIB_NAME} )
-configure_file("${HEADER_PATH}/Version.h.in" "${HEADER_PATH}/Version.h" @ONLY)
 
 SET( LIB_PUBLIC_HEADERS
     ${HEADER_PATH}/BackdropCommon.h
@@ -14,7 +13,6 @@ SET( LIB_PUBLIC_HEADERS
     ${HEADER_PATH}/EffectLibrary.h
     ${HEADER_PATH}/EffectLibraryUtils.h
     ${HEADER_PATH}/Export.h
-    ${HEADER_PATH}/LightInfo.h
     ${HEADER_PATH}/LocationData.h
     ${HEADER_PATH}/Manager.h
     ${HEADER_PATH}/MoonBody.h
@@ -25,12 +23,11 @@ SET( LIB_PUBLIC_HEADERS
     ${HEADER_PATH}/ShaderModule.h
     ${HEADER_PATH}/ShaderModuleUtils.h
     ${HEADER_PATH}/ShaderModuleVisitor.h
-    ${HEADER_PATH}/ShadowMap.h
-    ${HEADER_PATH}/ShadowMapStage.h
     ${HEADER_PATH}/SkyDome.h
     ${HEADER_PATH}/SkyDomeStage.h
+    ${HEADER_PATH}/Stub.h
+    ${HEADER_PATH}/StubStage.h
     ${HEADER_PATH}/SunBody.h
-    ${HEADER_PATH}/SurfaceUtils.h
     ${HEADER_PATH}/Utils.h
     ${HEADER_PATH}/Version.h
 )
@@ -45,7 +42,6 @@ ADD_SHARED_LIBRARY_INTERNAL( ${LIB_NAME}
     Effect.cpp
     EffectLibrary.cpp
     EffectLibraryUtils.cpp
-    LightInfo.cpp
     LocationData.cpp
     Manager.cpp
     MoonBody.cpp
@@ -55,12 +51,11 @@ ADD_SHARED_LIBRARY_INTERNAL( ${LIB_NAME}
     ShaderModule.cpp
     ShaderModuleUtils.cpp
     ShaderModuleVisitor.cpp
-    ShadowMap.cpp
-    ShadowMapStage.cpp
     SkyDome.cpp
     SkyDomeStage.cpp
+    Stub.cpp
+    StubStage.cpp
     SunBody.cpp
-    SurfaceUtils.cpp
     Utils.cpp
     Version.cpp
 )

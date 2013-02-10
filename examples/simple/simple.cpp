@@ -17,7 +17,6 @@
 
 #include <backdropFX/ShaderModule.h>
 #include <backdropFX/ShaderModuleVisitor.h>
-#include <backdropFX/ShaderModuleUtils.h>
 
 #include <osgwTools/CameraConfigObject.h>
 #include <osgwTools/ReadFile.h>
@@ -54,7 +53,7 @@ public:
 
             const double aspect = (double) width / (double) height;
             _viewer.getCamera()->setProjectionMatrix( createProjection( aspect ) );
-            _viewer.getCamera()->getViewport()->setViewport( 0, 0, width, height );
+            _viewer.getCamera()->setViewport( new osg::Viewport( 0, 0, width, height ) );
 
             if( ( width > _maxWidth ) || ( height > _maxHeight ) )
             {
@@ -96,25 +95,23 @@ createDestinationFBO()
 void
 backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height )
 {
-    // TBD Until bdfx support multiple shadows/lights, set light 0.
-    osg::ref_ptr< osg::Light > light = new osg::Light;
-    light->setLightNum( 0 );
-    light->setPosition( osg::Vec4( 1.1, -30.0, 30.0, 1.0 ) );
-    backdropFX::Manager::instance()->setLight( light.get() );
-
-    //backdropFX::Manager::instance()->setDebugMode( backdropFX::BackdropCommon::debugShaders );
-
     //
     // Initialize the backdropFX Manager.
     backdropFX::Manager::instance()->setSceneData( root );
-    backdropFX::Manager::instance()->rebuild();
+    backdropFX::Manager::instance()->rebuild(
+        backdropFX::Manager::skyDome | backdropFX::Manager::depthPeel
+        );
+
+    // TBD don't RTT yet. Get this working in a window first.
+    // backdropFX::Manager::instance()->setFBO( createDestinationFBO() );
+    // TBD When we do RTT, it is app responsibility to splat an fstp to display the output image.
+    //   TBD Maybe backdropFX should contain a convenience mechanism for this.
 
     // With a reasonably large FOV in the window, the sun and moon typically
     // appear too small. Scale them up to make them more visible.
     backdropFX::SkyDome& sd = backdropFX::Manager::instance()->getSkyDome();
     sd.setSunScale( 2. );
     sd.setMoonScale( 2. );
-
 
     // Must always explicitly set the width and height of the rendered area.
     backdropFX::Manager::instance()->setTextureWidthHeight( width, height );
@@ -176,12 +173,18 @@ main( int argc, char ** argv )
     modelParent->addChild( loadedModels );
     root->addChild( modelParent );
 
+    // Disable GL_LIGHT0, leaving only the Sun enabled. This is kind of a hack,
+    // as we currently can't disable this on the root node, have to disable it on
+    // a child node.
+    modelParent->getOrCreateStateSet()->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
+
     // Convert loaded data to use shader composition.
     {
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( false ); // Use bdfx-main
         smv.setAttachTransform( false ); // Use bdfx-transform
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        smv.setSupportSunLighting( true ); // Use shaders that support Sun lighting.
+        root->accept( smv );
     }
 
     unsigned int width( 800 ), height( 600 );

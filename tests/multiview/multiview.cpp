@@ -68,13 +68,7 @@ ViewInfoList vil;
 
 void setUpViewInWindow( int x, int y, int width, int height )
 {
-#if( OSGWORKS_OSG_VERSION >= 20908 )
-    // April 30 2010, instance() now returns a ref_ptr.
-    // June 18 2010, 2.9.8 released.
-    osg::DisplaySettings* ds = osg::DisplaySettings::instance().get();
-#else
     osg::DisplaySettings* ds = osg::DisplaySettings::instance();
-#endif
     osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits;
 
     traits->readDISPLAY();
@@ -146,14 +140,8 @@ void setUpViewAcrossAllScreens( unsigned int& widthOut, unsigned int& heightOut 
         osg::notify(osg::NOTICE)<<"View::setUpViewAcrossAllScreens() : Error, no WindowSystemInterface available, cannot create windows."<<std::endl;
         return;
     }
-
-#if( OSGWORKS_OSG_VERSION >= 20908 )
-    // April 30 2010, instance() now returns a ref_ptr.
-    // June 18 2010, 2.9.8 released.
-    osg::DisplaySettings* ds = osg::DisplaySettings::instance().get();
-#else
+    
     osg::DisplaySettings* ds = osg::DisplaySettings::instance();
-#endif
     osg::Camera* camera = sv->getCamera();
 
     double fovy, aspectRatio, zNear, zFar;        
@@ -240,8 +228,7 @@ backdropFXSetUp( osg::Node* root, unsigned int width, unsigned int height )
 
     backdropFX::Manager::instance()->setTextureWidthHeight( width, height );
 
-    backdropFX::RenderingEffects& rfx = backdropFX::Manager::instance()->getRenderingEffects();
-    rfx.setEffectSet( backdropFX::RenderingEffects::effectGlow );
+    backdropFX::configureGlowEffect( true );
 }
 
 osg::Node* glowing( const std::string& fileName )
@@ -320,7 +307,8 @@ int main( int argc, char ** argv )
         backdropFX::ShaderModuleVisitor smv;
         smv.setAttachMain( false ); // Use bdfx-main
         smv.setAttachTransform( false ); // Use bdfx-transform
-        backdropFX::convertFFPToShaderModules( root.get(), &smv );
+        smv.setSupportSunLighting( true ); // Use shaders that support Sun lighting.
+        root->accept( smv );
     }
 
 
@@ -363,7 +351,7 @@ int main( int argc, char ** argv )
     sv = new osgUtil::SceneView;
     osg::ref_ptr< osg::FrameStamp > fs = new osg::FrameStamp();
     fs->setFrameNumber( 0 );
-    sv->setFrameStamp( fs.get() );
+    sv->setFrameStamp( fs );
 
     if( renderToWindow )
         setUpViewInWindow( 20, 30, width, height );
@@ -416,13 +404,7 @@ int main( int argc, char ** argv )
     sv->setDefaults( osgUtil::SceneView::HEADLIGHT );
     gw->grabFocusIfPointerInWindow();
     sv->setState( gc->getState() );
-#if( OSGWORKS_OSG_VERSION >= 20908 )
-    // April 30 2010, instance() now returns a ref_ptr.
-    // June 18 2010, 2.9.8 released.
-    sv->setDisplaySettings( osg::DisplaySettings::instance().get() );
-#else
     sv->setDisplaySettings( osg::DisplaySettings::instance() );
-#endif
     sv->inheritCullSettings( *( sv->getCamera() ) );
     {
         osgUtil::GLObjectsVisitor glov;
@@ -435,7 +417,6 @@ int main( int argc, char ** argv )
         cam->setClearMask( 0 );
     }
 
-    sv->getUpdateVisitor()->setFrameStamp( fs.get() );
     for( int fc=0; fc<200; fc++ )
     {
         fs->setFrameNumber( fs->getFrameNumber() + 1 );
@@ -447,7 +428,8 @@ int main( int argc, char ** argv )
         glClear( GL_COLOR_BUFFER_BIT );
 
         // Update
-        sv->getSceneData()->accept( *( sv->getUpdateVisitor() ) );
+        osgUtil::UpdateVisitor uv;
+        sv->getSceneData()->accept( uv );
 
         for( unsigned int idx = 0; idx < numViews; idx++ )
         {
@@ -553,7 +535,6 @@ test doesn't interface with osgGA for event handling.)
   <tr>
     <td><b>-b</b></td>
     <td>Use backdropFX. Default uses vanilla OSG (no backdropFX).</td>
-  </tr>
   <tr>
     <td><b><model> [<models>...]</b></td>
     <td>Model(s) to display. If you don't specify a model, this test displays the cow and teapot.</td>
@@ -603,9 +584,9 @@ buffer. Unfortunately, OSG uses viewport x and y values when computing
 what it believes is the required size of the render buffer. For example, a viewport of
 1280,0,1280,1024 results in a render buffer with width 2560. Unfortunately, OSG prevents 
 us from creating our own correctly sized render buffer and attaching it to the Camera, 
-so our code creates a depth texture and attach it to the Camera, even though we have no 
-need for a depth texture. (For the effects camera, we don't use a depth texture for normalized
-DOF and heat distortion distances, we use a second color buffer for that.)
+so you have to create a texture and attach it to the Camera, even though you have no 
+immediate need for a depth texture. (This was for the glow camera to use. We probably   
+need a depth texture in the future to support DOF.)
 
 We also encountered problems due to OSG's use of viewport values for other operations
 besides applying the viewport. Internal OSG code uses the viewport values to
@@ -635,7 +616,7 @@ supports child Cameras in the scene graph by ensuring that it modifies and resto
 the viewport around child Camera rendering.
 
 If you have a child Camera in your scene graph, and you set its viewport to NULL, it
-inherits a viewport from the parent Camera. backdropFX does this to the effects Camera,
+inherits a viewport from the parent Camera. backdropFX does this to the glow Camera,
 so it uses the same viewport (in this case, an RTTViewport) as the parent
 SceneView Camera.
 

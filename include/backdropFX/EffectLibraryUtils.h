@@ -29,6 +29,27 @@ BACKDROPFX_EXPORT osg::Program* createEffectProgram( const std::string& baseName
 
 
 
+/** \brief A convenience routine to toggle glow on and off.
+
+Interacts directly with the Manager to toggle glow on and off.
+When on, it creates an EffectGlow instance and adds it to
+the RenderingEffects EffectVector and sets the Manager glow camera
+to have a node mask of 0xffffffff. When off, it deletes the
+EffectGlow instance from the EffectVector and sets the glow camera
+node mask to 0.
+
+\return True on success. But if there is no work to do (requires no
+state change to fulfill the request), this function
+returns false.
+*/
+BACKDROPFX_EXPORT bool configureGlowEffect( const bool enable );
+
+/** \brief TBD
+TBD
+*/
+BACKDROPFX_EXPORT bool configureDOFEffect( const bool enable );
+
+
 // namespace backdropFX
 }
 

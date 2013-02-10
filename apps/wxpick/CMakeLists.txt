@@ -1,3 +1,4 @@
+SET( CATEGORY App )
 MAKE_WX_EXECUTABLE( wxpick
     wxpick.cpp
     wxpick.h

@@ -100,10 +100,6 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
     UTIL_GL_ERROR_CHECK( "DepthPartitionStage draw start" );
 
 
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.pushCamera( _camera );
-
     osg::State& state( *renderInfo.getState() );
     const unsigned int contextID( state.getContextID() );
     osg::FBOExtensions* fboExt( osg::FBOExtensions::instance( contextID, true ) );
@@ -207,7 +203,7 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
         }
 
         // TBD should be tied to debug.
-        // Debugging aid: Add a pinkish tint to odd partitions.
+        // Debugging aid: Add a pinkish tink to odd partitions.
         // This is done in bdfx-finalize.fs.
         if( idx & 1 )
             _partitionDebug->set( osg::Vec4f( .5f, 0.f, 0.f, 0.f ) );
@@ -230,14 +226,14 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
             }
         }
 
-        // Must clear the depth buffer for each pass.
-        // Not really necessary if depth peeling is on, but required when
-        // depth peeling is off.
-        glClear( GL_DEPTH_BUFFER_BIT );
-
         // Render child stages.
         drawPreRenderStages( renderInfo, previous );
 
+        // Normally, this is a no-op, as there are no direct children to
+        // DepthPartition, only the DepthPeel node (which is rendered in the
+        // drawPreRenderStages() call above). However, if DepthPeel is disabled,
+        // then the scene is attached directly to DepthPartition as a child
+        // Group, and in thin case drawImplementation() renders the scene.
         //osg::Timer timerA;
         RenderBin::drawImplementation( renderInfo, previous );
         //osg::notify( osg::ALWAYS ) << "DepthPart drawImpl: " << timerA.time_s() << std::endl;
@@ -274,10 +270,6 @@ DepthPartitionStage::draw( osg::RenderInfo& renderInfo, osgUtil::RenderLeaf*& pr
         UTIL_GL_ERROR_CHECK( msg );
         UTIL_GL_FBO_ERROR_CHECK( msg, fboExt );
     }
-
-    // Fix for redmine 434. See SkyDomeStage::draw() for more info.
-    if( _camera )
-        renderInfo.popCamera();
 }
 
 void

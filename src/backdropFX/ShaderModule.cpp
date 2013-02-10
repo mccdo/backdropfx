@@ -47,8 +47,7 @@ ShaderModuleCullCallback::operator()( osg::Node* node, osg::NodeVisitor* nv )
     osg::ref_ptr< osg::StateSet >& ss( _stateSetMap[ np ] );
     if( !( ss.valid() ) )
     {
-        osg::notify( osg::NOTICE ) << "backdropFX: NULL StateSet. Should only happen if all ShaderModules are empty." << std::endl;
-        osg::notify( osg::NOTICE ) << "  Could also happen if RebuildShaderModules was not run from the root node." << std::endl;
+        osg::notify( osg::NOTICE ) << "NULL StateSet should only happen if all ShaderModules are empty." << std::endl;
         osg::notify( osg::NOTICE ) << "  Node: " << node->getName() << ", class: " << node->className() << std::endl;
         if( !_shaderMap.empty() )
         {
@@ -97,16 +96,11 @@ ShaderModuleCullCallback::setShader( const std::string& shaderSemantic, osg::Sha
         return;
 
     ShaderKey key( shaderSemantic, shader->getType() );
-    setShader( key, shader, inheritance );
-}
-
-void ShaderModuleCullCallback::setShader( const ShaderKey& shaderKey, osg::Shader* shader, const unsigned int inheritance )
-{
-    osg::ref_ptr< osg::Shader >& shaderCurrent( _shaderMap[ shaderKey ] );
+    osg::ref_ptr< osg::Shader >& shaderCurrent( _shaderMap[ key ] );
     if( shaderCurrent != shader )
     {
         shaderCurrent = shader;
-        _inheritanceMap[ shaderKey ] = inheritance;
+        _inheritanceMap[ key ] = inheritance;
     }
 }
 
@@ -114,11 +108,7 @@ osg::Shader*
 ShaderModuleCullCallback::getShader( const std::string& shaderSemantic, osg::Shader::Type type )
 {
     ShaderKey key( shaderSemantic, type );
-    ShaderMap::iterator it = _shaderMap.find( key );
-    if( it != _shaderMap.end() )
-        return( it->second.get() );
-    else
-        return( NULL );
+    return( _shaderMap[ key ].get() );
 }
 unsigned int
 ShaderModuleCullCallback::getShaderInheritance( const std::string& shaderSemantic, osg::Shader::Type type ) const
@@ -276,19 +266,12 @@ RebuildShaderModules::rebuildSource( ShaderModuleCullCallback* smccb, osg::NodeP
     if( !( ss.valid() ) )
     {
         osg::Program* prog = new osg::Program;
-        UTIL_MEMORY_CHECK( prog, "RebuildShaderModules new Program", );
         for( ShaderList::iterator slitr = sl.begin(); slitr != sl.end(); slitr++ )
         {
             osg::Shader* shader = *slitr;
             prog->addShader( shader );
             prog->setName( prog->getName() + shader->getName() + std::string( " " ) );
         }
-
-        // TBD Double hack! This is to support bump mapping for complex surfaces.
-        // a) We need a way to communicate vertex attribute locations to a program.
-        // b) The locations below are hardcoded; see SurfaceUtils.cpp.
-        prog->addBindAttribLocation( "rm_Tangent", 6 );
-	    prog->addBindAttribLocation( "rm_Binormal", 7 );
 
         ss = new osg::StateSet;
         ss->setAttributeAndModes( prog, osg::StateAttribute::ON );

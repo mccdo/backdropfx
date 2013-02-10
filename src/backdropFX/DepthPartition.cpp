@@ -3,8 +3,6 @@
 #include <backdropFX/DepthPartition.h>
 #include <backdropFX/DepthPartitionStage.h>
 #include <backdropFX/ShaderModuleUtils.h>
-#include <backdropFX/Manager.h>
-#include <backdropFX/ShadowMap.h>
 #include <osgDB/FileUtils>
 #include <osgDB/FileNameUtils>
 #include <osgUtil/CullVisitor>
@@ -74,7 +72,7 @@ DepthPartition::internalInit()
     osg::ref_ptr< osg::Shader > shader;
     std::string fileName( "shaders/gl2/bdfx-init.vs" );
     __LOAD_SHADER( shader, osg::Shader::VERTEX, fileName );
-    UTIL_MEMORY_CHECK( shader, "DepthPartition internalInit bdfx-init.vs", );
+    UTIL_MEMORY_CHECK( shader, "DepthPeel internalInit bdfx-init.vs", );
     smccb->setShader( getShaderSemantic( fileName ), shader.get(),
         ShaderModuleCullCallback::InheritanceOverride );
 }
@@ -131,21 +129,6 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
     }
 
     dpStage->setViewport( cv->getCurrentCamera()->getViewport() );
-    dpStage->setCamera( camera );
-
-
-    // See comments in ShadowMap.cpp where it allocates StateSetCache
-    // for a further explanation of what we're doing in this code.
-    ShadowMap& smn = Manager::instance()->getShadowMap();
-    osg::ref_ptr< osg::StateSet > smStateSet = smn.getDepthTexStateSet( cv );
-    if( smStateSet.valid() )
-    {
-        // This works well: if the StateSet isn't valid, we do minimal additional work.
-        // An alternate solution is that Manager could keep its rebuild flags, and we'd
-        // know that shadows are enabled or disabled. But this is good enough for now.
-        cv->pushStateSet( smStateSet.get() );
-    }
-
 
     // PSC TBD. I don't think we need this.
     //dpStage->setInheritedPositionalStateContainer( previousStage->getPositionalStateContainer() );
@@ -173,10 +156,9 @@ DepthPartition::traverse( osg::NodeVisitor& nv )
         cv->setCurrentRenderBin( previousRenderBin );
     }
 
-    if( smStateSet.valid() )
-        cv->popStateSet();
 
     // Hook our RenderStage into the render graph.
+    // TBD Might need to support RenderOrder a la Camera node. For now, post-render.
     cv->getCurrentRenderBin()->getStage()->addPreRenderStage( dpStage.get(), camera->getRenderOrderNum() );
 }
 
