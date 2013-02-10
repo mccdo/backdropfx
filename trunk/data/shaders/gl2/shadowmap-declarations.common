@@ -1,0 +1,12 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/shadowmap-declarations.common
+
+
+//
+// Interface between vertex and fragment shaders.
+varying vec4 bdfx_outShadowTexCoord;
+
+
+// END gl2/shadowmap-declarations.common
+

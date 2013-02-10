@@ -1,0 +1,54 @@
+
+BDFX INCLUDE shaders/gl2/ffp-declarations.common
+BDFX INCLUDE shaders/gl2/ffp-declarations.vs
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/ffp-lighting-utilities.common
+
+
+vec4 internalAmbientDiffuse( inout vec4 pli,
+    in vec4 Acm, in vec4 Dcm, in vec4 Alight, in vec4 Dlight )
+{
+    if( pli.w != 0. )
+        pli -= bdfx_eyeVertex;
+    pli.xyz = normalize( pli.xyz );
+    float diffuseDot = max( dot( bdfx_eyeNormal, pli.xyz ), 0.0 );
+
+    vec3 color = ( ( Acm.rgb * Alight.rgb ) + ( diffuseDot * Dcm.rgb * Dlight.rgb ) );
+    return( vec4( color, Dcm.a ) );
+}
+
+vec4 internalDiffuse( inout vec4 pli,
+    in vec4 Dcm, in vec4 Dlight )
+{
+    if( pli.w != 0. )
+        pli -= bdfx_eyeVertex;
+    pli.xyz = normalize( pli.xyz );
+    float diffuseDot = max( dot( bdfx_eyeNormal, pli.xyz ), 0.0 );
+
+    vec3 color = ( diffuseDot * Dcm.rgb * Dlight.rgb );
+    return( vec4( color, Dcm.a ) );
+}
+
+vec4 internalSpecular( in vec3 pli, in vec4 Slight )
+{
+    // local viewer == FALSE
+    vec3 hi = normalize( pli + vec3( 0., 0., 1. ) );
+    if( bdfx_lightModel.localViewer == 1 )
+    {
+        vec3 VPe = -vec3( bdfx_modelViewMatrix * bdfx_vertex );
+        hi = normalize( pli + VPe );
+    }
+    float specularDot = dot( bdfx_eyeNormal, hi );
+
+    vec3 color = vec3( 0., 0., 0. );
+    if( specularDot > 0.01 )
+    {
+        color = ( pow( specularDot, bdfx_frontMaterial.shininess ) *
+            bdfx_frontMaterial.specular.rgb * Slight.rgb );
+    }
+    return( vec4( color, 0. ) );
+}
+
+// END gl2/ffp-lighting-utilities.common
+

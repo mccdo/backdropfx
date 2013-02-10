@@ -1,0 +1,10 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/glow-declarations.common
+
+
+varying float bdfx_normalizedDistanceToFocus;
+
+
+// END gl2/glow-declarations.common
+

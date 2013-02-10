@@ -1,0 +1,41 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/ffp-declarations-fog.common
+
+
+//
+// Constants
+// WARNING: Must keep synch'd with (host code) ShaderLibraryConstants.h
+
+
+//
+// Input uniforms.
+// Use #define so that we can use consistent internal names
+// to minimize code changes between GL2 and GL3.
+
+
+
+//
+// Input uniforms. These uniforms are written by the FFP emulation shaders.
+
+// fog
+struct bdfx_fogParameters {
+    int mode;
+    vec4 color;
+    float density;
+    float start;
+    float end;
+    float scale; // aka GL_LINEAR fog's gl_Fog.scale: 1.0 / (gl_Fog.end - gl_Fog.start)
+};
+uniform bdfx_fogParameters bdfx_fog;
+
+#define FOG_LINEAR		0x2601 // GL_LINEAR
+#define FOG_EXP		0x0800 // GL_EXP
+#define FOG_EXP2		0x0801 // EL_EXP2
+
+// Intermediate varyings
+varying float bdfx_outFogFragCoord;
+
+
+// END gl2/ffp-declarations-fog.common
+

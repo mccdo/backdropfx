@@ -1,0 +1,8 @@
+SET( CATEGORY Proto )
+
+ADD_SUBDIRECTORY( depthpart )
+ADD_SUBDIRECTORY( hdr )
+ADD_SUBDIRECTORY( newdepthpeel )
+ADD_SUBDIRECTORY( noise )
+ADD_SUBDIRECTORY( shadercompositor )
+ADD_SUBDIRECTORY( shadows )

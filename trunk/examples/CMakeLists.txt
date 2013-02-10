@@ -1,0 +1,5 @@
+SET( CATEGORY Example )
+
+ADD_SUBDIRECTORY( alloff )
+ADD_SUBDIRECTORY( simple )
+# ADD_SUBDIRECTORY( simple-rtt )

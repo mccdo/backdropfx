@@ -1,0 +1,7 @@
+ADD_SUBDIRECTORY( moon )
+ADD_SUBDIRECTORY( osgephem )
+ADD_SUBDIRECTORY( perftest00 )
+ADD_SUBDIRECTORY( profiler )
+ADD_SUBDIRECTORY( shaderffp )
+ADD_SUBDIRECTORY( skydome )
+ADD_SUBDIRECTORY( verticalslice )

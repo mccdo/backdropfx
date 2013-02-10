@@ -1,0 +1,21 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/bdfx-declarations.common
+
+
+//
+// Input uniforms
+uniform mat4 bdfx_partitionMatrix;
+uniform vec4 bdfx_glowColor;
+uniform vec3 bdfx_sunPosition;
+
+
+//
+// Globals
+// Assigned in init(), set to bdfx_partitionMatrix if doing
+// partitioning, otherwise set to bdfx_projectionMatrix.
+mat4 bdfx_projection;
+
+
+// END gl2/bdfx-declarations.common
+

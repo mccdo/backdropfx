@@ -1,0 +1,17 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// effects/declarations.common
+
+
+//
+// Constants.
+const int bdfx_maxInputTextures = 8;
+
+//
+// Input textures.
+uniform sampler2D inputTextures[ bdfx_maxInputTextures ];
+
+//
+// Communication between vertex and fragment shader.
+varying vec2 oTC;
+

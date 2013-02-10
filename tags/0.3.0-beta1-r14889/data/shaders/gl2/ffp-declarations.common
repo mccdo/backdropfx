@@ -1,0 +1,203 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/ffp-declarations.common
+
+
+//
+// Constants
+// WARNING: Must keep synch'd with (host code) ShaderLibraryConstants.h
+const int bdfx_maxTextureUnits = 4;
+const int bdfx_maxTextureCoords = 4;
+const int bdfx_maxClipPlanes = 8;
+const int bdfx_maxLights = 8;
+// Reserve special texture coord sets
+const int bdfx_streamlineImageUnit = 7;
+
+
+//
+// Input uniforms.
+// Use #define so that we can use consistent internal names
+// to minimize code changes between GL2 and GL3.
+#define bdfx_modelViewMatrix gl_ModelViewMatrix
+#define bdfx_modelViewProjectionMatrix gl_ModelViewProjectionMatrix
+#define bdfx_projectionMatrix gl_ProjectionMatrix
+#define bdfx_modelViewMatrixInverse gl_ModelViewMatrixInverse
+#define bdfx_modelViewProjectionMatrixInverse gl_ModelViewProjectionMatrixInverse
+#define bdfx_projectionMatrixInverse gl_ProjectionMatrixInverse
+#define bdfx_modelViewMatrixTranspose gl_ModelViewMatrixTranspose
+#define bdfx_modelViewProjectionMatrixTranspose gl_ModelViewProjectionMatrixTranspose
+#define bdfx_projectionMatrixTranspose gl_ProjectionMatrixTranspose
+#define bdfx_modelViewMatrixInverseTranspose gl_ModelViewMatrixInverseTranspose
+#define bdfx_modelViewProjectionMatrixInverseTranspose gl_ModelViewProjectionMatrixInverseTranspose
+#define bdfx_projectionMatrixInverseTranspose gl_ProjectionMatrixInverseTranspose
+#define bdfx_textureMatrix gl_TextureMatrix
+#define bdfx_textureMatrixInverse gl_TextureMatrixInverse
+#define bdfx_textureMatrixTranspose gl_TextureMatrixTranspose
+#define bdfx_textureMatrixInverseTranspose gl_TextureMatrixInverseTranspose
+#define bdfx_normalMatrix gl_NormalMatrix
+#define bdfx_normalScale gl_NormalScale
+
+
+//
+// Input OSG uniforms.
+uniform int osg_FrameNumber;
+uniform float osg_FrameTime;
+uniform float osg_DeltaFrameTime;
+uniform float osg_SimulationTime;
+uniform mat4 osg_ViewMatrix;
+uniform mat4 osg_ViewMatrixInverse;
+
+
+//
+// Input uniforms. These uniforms are written by the FFP emulation shaders.
+
+// light source
+struct bdfx_lightSourceParameters {
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    vec4 position;
+    vec3 halfVector;
+    vec3 spotDirection;
+    float spotExponent;
+    float spotCutoff;
+    float spotCosCutoff;
+    float constantAttenuation;
+    float linearAttenuation;
+    float quadraticAttenuation;
+    float absolute; // Either 1.0 or 0.0. This is a float because OS X always interprets an int as 0.
+};
+uniform bdfx_lightSourceParameters bdfx_lightSource[ bdfx_maxLights ];
+// Mac doesn't like this. No longer an array, manually unroll to [bdfx_maxLights]
+uniform int bdfx_lightEnable0;
+uniform int bdfx_lightEnable1;
+uniform int bdfx_lightEnable2;
+uniform int bdfx_lightEnable3;
+uniform int bdfx_lightEnable4;
+uniform int bdfx_lightEnable5;
+uniform int bdfx_lightEnable6;
+uniform int bdfx_lightEnable7;
+
+// light model
+struct bdfx_lightModelParameters {
+    vec4 ambient;
+    int localViewer;
+    int separateSpecular;
+    int twoSided;
+};
+uniform bdfx_lightModelParameters bdfx_lightModel;
+
+// material
+struct bdfx_materialParameters {
+    vec4 emissive;
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+    float shininess;
+};
+uniform bdfx_materialParameters bdfx_frontMaterial;
+uniform bdfx_materialParameters bdfx_backMaterial;
+
+// Color material (simplified: on or off)
+uniform int bdfx_colorMaterial;
+
+// Sets the vertex normals to unit lengh.
+uniform int bdfx_normalize;
+
+// tex env color
+uniform vec4 bdfx_textureEnvColor[ bdfx_maxTextureUnits ];
+
+// TexGen TBD
+// For now, a hack:
+//   0 : No TexGen
+// not all of the below are guaranteed to be implemented right now
+// they need to be identical to the values of osg::TexGen::Mode
+#define GL_EYE_LINEAR 0x2400
+#define GL_OBJECT_LINEAR 0x2401
+#define GL_SPHERE_MAP 0x2402
+// extensions
+#define GL_NORMAL_MAP 0x8511
+#define GL_REFLECTION_MAP 0x8512
+// unroll out to bdfx_maxTextureCoords to avoid uniform arrays on Mac OSX
+uniform int bdfx_texGen0;
+uniform int bdfx_texGen1;
+uniform int bdfx_texGen2;
+uniform int bdfx_texGen3;
+uniform int bdfx_texGen4;
+uniform int bdfx_texGen5;
+uniform int bdfx_texGen6;
+uniform int bdfx_texGen7;
+
+// Texture
+// unroll out to bdfx_maxTextureUnits because we're having trouble with uniform arrays on Mac OSX
+uniform int bdfx_texture2dEnable0; // off or on
+uniform int bdfx_texture2dEnable1; // off or on
+uniform int bdfx_texture2dEnable2; // off or on
+uniform int bdfx_texture2dEnable3; // off or on
+// unroll out to bdfx_maxTextureUnits
+uniform int bdfx_textureEnvMode0; // glTexEnv(GL_TEXTURE_ENV_MODE, )
+uniform int bdfx_textureEnvMode1;
+uniform int bdfx_textureEnvMode2;
+uniform int bdfx_textureEnvMode3;
+// unroll out to bdfx_maxTextureUnits
+uniform sampler2D texture2dSampler0;
+uniform sampler2D texture2dSampler1;
+uniform sampler2D texture2dSampler2;
+uniform sampler2D texture2dSampler3;
+
+// params for GL_TEXTURE_ENV_MODE
+// "GL_TEXTURE_ENV_MODE defaults to GL_MODULATE" http://www.opengl.org/sdk/docs/man/xhtml/glTexEnv.xml
+// cf. http://www.khronos.org/registry/glsc/api/1.0/gl.h
+#define GL_DECAL	0x2101
+#define GL_MODULATE	0x2100
+#define GL_BLEND	0x0BE2
+#define GL_REPLACE	0x1E01
+#define GL_ADD		0x0104
+
+// 0 for off, 1 for on.
+uniform int bdfx_pointSprite;
+
+// Window dimensions
+uniform vec2 bdfx_widthHeight;
+
+// clip planes
+uniform vec4 bdfx_clipPlane[ bdfx_maxClipPlanes ];
+uniform int bdfx_clipPlaneEnable[ bdfx_maxClipPlanes ];
+
+// eye planes
+uniform vec4 bdfx_eyePlaneS[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_eyePlaneT[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_eyePlaneR[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_eyePlaneQ[ bdfx_maxTextureCoords ];
+uniform int bdfx_eyeAbsolute;
+uniform mat4 bdfx_eyeMatrix;
+
+// object planes
+uniform vec4 bdfx_objectPlaneS[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_objectPlaneT[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_objectPlaneR[ bdfx_maxTextureCoords ];
+uniform vec4 bdfx_objectPlaneQ[ bdfx_maxTextureCoords ];
+
+
+
+//
+// Interface between vertex and fragment shaders.
+// Don't use GL2 predefined varyings, declare our own.
+// This will allow us to use the same code in GL3.
+varying vec4 bdfx_outColor;
+varying vec4 bdfx_outSecondaryColor;
+
+varying vec4 bdfx_outTexCoord0;
+varying vec4 bdfx_outTexCoord1;
+varying vec4 bdfx_outTexCoord2;
+varying vec4 bdfx_outTexCoord3;
+
+
+//
+// Useful for passing values from vertex to fragment shader
+// in the course of shader debugging.
+varying vec4 bdfx_debug;
+
+
+// END gl2/ffp-declarations.common
+

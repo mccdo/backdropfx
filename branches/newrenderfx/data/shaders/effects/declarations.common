@@ -1,0 +1,19 @@
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// effects/declarations.common
+
+
+//
+// Input textures.
+uniform sampler2D inputTexture0;
+uniform sampler2D inputTexture1;
+uniform sampler2D inputTexture2;
+uniform sampler2D inputTexture3;
+
+// Percent of the texture that we should display.
+uniform vec2 texturePercent;
+
+//
+// Communication between vertex and fragment shader.
+varying vec2 oTC;
+

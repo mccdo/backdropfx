@@ -1,0 +1,26 @@
+
+BDFX INCLUDE shaders/gl2/bdfx-declarations.common
+BDFX INCLUDE shaders/gl2/ffp-lighting-utilities.common
+
+// Copyright (c) 2010 Skew Matrix Software. All rights reserved.
+// gl2/bdfx-lighting-utilities.common
+
+
+void internalSunLighting( out vec4 diffResult, out vec4 specResult,
+    in vec4 VPli, in vec4 Dcm )
+{
+    const vec4 sunColor = vec4( 1., 1., 1., 1. );
+
+    float diffuseDot;
+    diffResult = internalDiffuse( VPli, Dcm, sunColor );
+
+    // local viewer == FALSE
+    if( dot( VPli.xyz, vec3( 0., 0., 1. ) ) > 0. )
+        specResult = internalSpecular( VPli.xyz, sunColor );
+    else
+        specResult = vec4( 0., 0., 0., 0. );
+}
+
+// END gl2/bdfx-lighting-utilities.common
+
+

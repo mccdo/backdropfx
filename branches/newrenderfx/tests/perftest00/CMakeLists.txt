@@ -1,0 +1,4 @@
+SET( CATEGORY Test )
+MAKE_EXECUTABLE( perftest00
+    perftest00.cpp
+)

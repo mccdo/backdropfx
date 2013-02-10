@@ -1,0 +1,43 @@
+ 
+// Copyright (c) 2011 Skew Matrix Software. All rights reserved.
+// gl2/noise-declarations.common
+
+
+/*
+ * "permTexture" is a 256x256 texture that is used for both the permutations
+ * and the 2D and 3D gradient lookup. For details, see the main C program.
+ * "gradTexture" is a 256x256 texture with 4D gradients, similar to
+ * "permTexture" but with the permutation index in the alpha component
+ * replaced by the w component of the 4D gradient.
+ * 2D classic noise uses only permTexture.
+ * 2D simplex noise uses only permTexture.
+ * 3D classic noise uses only permTexture.
+ * 3D simplex noise uses only permTexture.
+ * 4D classic noise uses permTexture and gradTexture.
+ * 4D simplex noise uses permTexture and gradTexture.
+ */
+uniform sampler2D permTexture;
+
+
+
+float fade(float t);
+void simplex( const in vec3 P, out vec3 offset1, out vec3 offset2 );
+void simplex( const in vec4 P, out vec4 offset1, out vec4 offset2, out vec4 offset3 );
+float noise( vec2 P );
+float noise( vec3 P );
+float snoise( vec2 P );
+float snoise( vec3 P );
+float fBm( vec2 P, float octaves );
+float clampedfBm(vec2 P, float octaves);
+float clampedfBmZeroToOne(vec2 P, float octaves);
+
+float SampleAmplitude( sampler2D Map, vec2 MapCoord );
+vec3 SlopeToNormal(vec2 slope);
+vec3 SamplesToNormal( float BaseAmplitude, float DeltaAmplitudeX,
+        float DeltaAmplitudeY, float Delta, float scale );
+vec3 MapToNormal( sampler2D Map, vec2 MapCoord, float scale, vec2 localDFD );
+vec3 fBMToNormal( vec2 MapCoord, float octaves, float scale, vec2 localDFD );
+
+
+// END gl2/noise-declarations.fs
+
