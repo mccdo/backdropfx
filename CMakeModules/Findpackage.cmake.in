@@ -1,0 +1,45 @@
+# - Find a @PROJECT_NAME@ installation or build tree.
+# The following variables are set if @PROJECT_NAME@ is found.  If @PROJECT_NAME@ is not
+# found, @PROJECT_NAME@_FOUND is set to false.
+#  @PROJECT_NAME@_FOUND         - Set to true when @PROJECT_NAME@ is found.
+#  @PROJECT_NAME@_USE_FILE      - CMake file to use @PROJECT_NAME@.
+#  @PROJECT_NAME@_MAJOR_VERSION - The @PROJECT_NAME@ major version number.
+#  @PROJECT_NAME@_MINOR_VERSION - The @PROJECT_NAME@ minor version number 
+#                       (odd non-release).
+#  @PROJECT_NAME@_BUILD_VERSION - The @PROJECT_NAME@ patch level 
+#                       (meaningless for odd minor).
+#  @PROJECT_NAME@_INCLUDE_DIRS  - Include directories for @PROJECT_NAME@
+#  @PROJECT_NAME@_LIBRARY_DIRS  - Link directories for @PROJECT_NAME@ libraries
+
+# The following cache entries must be set by the user to locate @PROJECT_NAME@:
+#  @PROJECT_NAME@_DIR  - The directory containing @PROJECT_NAME@Config.cmake.  
+#             This is either the root of the build tree,
+#             or the lib directory.  This is the 
+#             only cache entry.
+
+
+# Assume not found.
+SET(@PROJECT_NAME@_FOUND 0)
+
+# Construct consitent error messages for use below.
+SET(@PROJECT_NAME@_DIR_DESCRIPTION "directory containing @PROJECT_NAME@Config.cmake.  This is either the root of the build tree, or PREFIX/lib for an installation.")
+SET(@PROJECT_NAME@_DIR_MESSAGE "@PROJECT_NAME@ not found.  Set the @PROJECT_NAME@_DIR cmake cache entry to the ${@PROJECT_NAME@_DIR_DESCRIPTION}")
+
+# Use the Config mode of the find_package() command to find @PROJECT_NAME@Config.
+# If this succeeds (possibly because @PROJECT_NAME@_DIR is already set), the
+# command will have already loaded @PROJECT_NAME@Config.cmake and set @PROJECT_NAME@_FOUND.
+IF(NOT @PROJECT_NAME@_FOUND)
+  FIND_PACKAGE(@PROJECT_NAME@ QUIET NO_MODULE)
+ENDIF(NOT @PROJECT_NAME@_FOUND)
+
+#-----------------------------------------------------------------------------
+IF(NOT @PROJECT_NAME@_FOUND)
+  # @PROJECT_NAME@ not found, explain to the user how to specify its location.
+  IF(@PROJECT_NAME@_FIND_REQUIRED)
+    MESSAGE(FATAL_ERROR ${@PROJECT_NAME@_DIR_MESSAGE})
+  ELSE(@PROJECT_NAME@_FIND_REQUIRED)
+    IF(NOT @PROJECT_NAME@_FIND_QUIETLY)
+      MESSAGE(STATUS ${@PROJECT_NAME@_DIR_MESSAGE})
+    ENDIF(NOT @PROJECT_NAME@_FIND_QUIETLY)
+  ENDIF(@PROJECT_NAME@_FIND_REQUIRED)
+ENDIF(NOT @PROJECT_NAME@_FOUND)
