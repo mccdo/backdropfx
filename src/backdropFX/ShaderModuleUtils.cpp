@@ -6,7 +6,7 @@
 #include <backdropFX/Manager.h>
 #include <osgwTools/CountsVisitor.h>
 #include <osgwTools/RemoveData.h>
-#include <osgwTools/CountStateSets.h>
+#include <osgwTools/CountsVisitor.h>
 #include <osgwTools/StateSetUtils.h>
 #include <osgDB/FileUtils>
 #include <osgDB/FileNameUtils>
@@ -64,14 +64,16 @@ bool convertFFPToShaderModules( osg::Node* node, backdropFX::ShaderModuleVisitor
     if( ownSMV )
         delete localSMV;
 
+#if 0
     // Conversion from FFP to shaders could produce empty StateSets. Remove them.
     {
-        osgwTools::CountStateSets css;
-        node->accept( css );
+        osgwTools::CountsVisitor counter;
+        node->accept( counter );
         osg::notify( osg::INFO ) << "Empty StateSets: " <<
-            css._emptyStateSets << " empty, " <<
-            css._removedStateSets << " removed." << std::endl;
+            counter._emptyStateSets << std::endl;
+        // TBD remove empty state sets.
     }
+#endif
 
 #if( OSGWORKS_VERSION >= 10153 )
     cv.reset();
