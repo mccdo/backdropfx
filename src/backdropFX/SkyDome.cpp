@@ -576,7 +576,7 @@ SkyDome::updateLocationData()
 
     // Rotate the celestial sphere.
     //   Part II: Rotate by local sidereal time.
-    const double mjd( localDateTime.getModifiedJulianDate( false ) );
+    const double mjd( localDateTime.getModifiedJulianDate() );
     const double lst( osgEphemeris::EphemerisEngine::getLocalSiderealTimePrecise( mjd, -longitude ) );
     r = osg::Matrix::rotate( -lst / 12. * osg::PI, z );
     osg::Vec3 x( osg::Vec3( 1., 0., 0. ) * r );
@@ -753,7 +753,7 @@ SkyDome::setSunPosition( backdropFX::SunBody* sunBody, const osgEphemeris::DateT
         UTIL_MEMORY_CHECK( _cSun.get(), "SkyDome", );
     }
 
-    _cSun->updatePosition( dateTime.getModifiedJulianDate( false ) );
+    _cSun->updatePosition( dateTime.getModifiedJulianDate() );
     double ra, dec;
     _cSun->getPos( &ra, &dec );
     sunBody->setRADecDistance( ra / osg::PI * 12.0,
@@ -771,7 +771,7 @@ SkyDome::setMoonPosition( backdropFX::MoonBody* moonBody, const osgEphemeris::Da
     double latitude, longitude;
     backdropFX::LocationData::s_instance()->getLatitudeLongitude( latitude, longitude );
 
-    const double mjd( dateTime.getModifiedJulianDate( false ) );
+    const double mjd( dateTime.getModifiedJulianDate() );
     const double lst( osgEphemeris::EphemerisEngine::getLocalSiderealTimePrecise( mjd, -longitude ) );
     _cMoon->updatePosition( mjd, lst, latitude, _cSun.get() );
     double ra, dec;
