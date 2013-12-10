@@ -16,7 +16,7 @@ main( int argc,
 {
     double lo( 0. );
     osgEphemeris::DateTime dt( 2010, 1, 27, 12, 0, 0 );
-    double mjd = dt.getModifiedJulianDate( false );
+    double mjd = dt.getModifiedJulianDate();
     double lst = osgEphemeris::EphemerisEngine::getLocalSiderealTimePrecise( mjd, 0. );
     std::cout << std::endl;
     std::cout << "Test 1: 27 Jan 2010, noon, mjd: " << mjd << ", longitude: " << lo << std::endl;
@@ -30,7 +30,7 @@ main( int argc,
 
     lo = 0.;
     dt = osgEphemeris::DateTime( 2000, 1, 1, 12, 0, 0 );
-    mjd = dt.getModifiedJulianDate( false );
+    mjd = dt.getModifiedJulianDate();
     lst = osgEphemeris::EphemerisEngine::getLocalSiderealTimePrecise( mjd, -5. );
     std::cout << std::endl;
     std::cout << "Test 3: 1 Jan 2000, noon, mjd: " << mjd << ", longitude: " << lo << std::endl;
